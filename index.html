@@ -17,12 +17,18 @@
   <div id="ui">
     <!-- Timer -->
     <section class="timer card" aria-label="Pomodoro timer">
+      <div class="grip" id="grip" title="Drag to move · double-click to reset"></div>
       <div class="modes" role="tablist">
         <button data-mode="focus" role="tab">Focus</button>
         <button data-mode="short" role="tab">Short break</button>
         <button data-mode="long" role="tab">Long break</button>
       </div>
-      <div class="time" id="time" aria-live="off">25:00</div>
+      <div class="time-row">
+        <button class="adj" id="minusBtn" aria-label="1 minute less">−</button>
+        <div class="time" id="time" aria-live="off">25:00</div>
+        <button class="adj" id="plusBtn" aria-label="1 minute more">+</button>
+      </div>
+      <div class="weather" id="weather" hidden><span id="weatherIcon"></span><span id="weatherTemp"></span></div>
       <div class="progress"><div id="progressBar"></div></div>
       <div class="controls">
         <button id="resetBtn" class="icon" title="Reset (R)" aria-label="Reset">
@@ -114,6 +120,15 @@
     <!-- Scenes -->
     <section class="panel card" id="panel-scenes" aria-label="Scenes">
       <header><h2>Scenes</h2><button class="close icon" aria-label="Close"><svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg></button></header>
+      <h3>Lighting</h3>
+      <div class="seg" id="lightingSeg" role="radiogroup" aria-label="Lighting">
+        <button data-tod="auto" role="radio" title="Follows your clock">Auto</button>
+        <button data-tod="morning" role="radio">Morning</button>
+        <button data-tod="afternoon" role="radio">Afternoon</button>
+        <button data-tod="evening" role="radio">Evening</button>
+        <button data-tod="night" role="radio">Night</button>
+      </div>
+      <h3>Scene</h3>
       <div class="scene-grid" id="sceneGrid"></div>
       <label class="check"><input type="checkbox" id="autoMix"> Switch ambient sounds to match the scene</label>
     </section>
@@ -132,6 +147,23 @@
       <label class="check"><input type="checkbox" id="setAutoFocus"> Start the next focus session automatically</label>
       <label class="field">Chime volume <input type="range" id="setChime" min="0" max="100"> <button type="button" class="pill small" id="testChime">Test</button></label>
       <label class="check"><input type="checkbox" id="setNotify"> Desktop notification when a session ends</label>
+      <h3>Weather</h3>
+      <label class="check"><input type="checkbox" id="setWeather"> Show local temperature under the clock</label>
+      <div class="field">Units
+        <div class="seg small" id="unitSeg" role="radiogroup" aria-label="Temperature units">
+          <button data-unit="f" role="radio">°F</button>
+          <button data-unit="c" role="radio">°C</button>
+          <button data-unit="both" role="radio">Both</button>
+        </div>
+      </div>
+      <form class="city-row" id="cityForm">
+        <input type="text" id="setCity" placeholder="City, e.g. Portland, OR" autocomplete="off">
+        <button type="submit" class="pill small">Set</button>
+        <button type="button" class="icon" id="useLocation" title="Use my current location" aria-label="Use my current location">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/><circle cx="12" cy="12" r="7"/></svg>
+        </button>
+      </form>
+      <p class="hint" id="weatherPlace"></p>
       <h3>Display</h3>
       <label class="check"><input type="checkbox" id="setIdle"> Fade the interface when the mouse is idle</label>
       <label class="field">Animation
@@ -147,11 +179,13 @@
         <dt>R</dt><dd>Reset timer</dd>
         <dt>S</dt><dd>Skip to next session</dd>
         <dt>M</dt><dd>Play / pause music</dd>
+        <dt>↑ ↓</dt><dd>Add / remove a minute (Shift: 5)</dd>
         <dt>N</dt><dd>Next scene</dd>
+        <dt>L</dt><dd>Change lighting</dd>
         <dt>Z</dt><dd>Zen mode</dd>
         <dt>F</dt><dd>Fullscreen</dd>
       </dl>
-      <p class="hint">Everything is saved in this browser only. <button class="link" id="resetStats">Reset today’s count</button></p>
+      <p class="hint">Everything is saved in this browser only. <button class="link" id="resetStats">Reset today’s count</button> · <button class="link" id="resetPos">Reset timer position</button></p>
     </section>
 
     <div class="toast" id="toast" role="status"></div>
@@ -161,6 +195,7 @@
   <script src="js/ambient.js"></script>
   <script src="js/timer.js"></script>
   <script src="js/music.js"></script>
+  <script src="js/weather.js"></script>
   <script src="js/scenes.js"></script>
   <script src="js/app.js"></script>
 </body>
