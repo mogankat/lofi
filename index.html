@@ -17,12 +17,17 @@
   <div id="ui">
     <!-- Timer -->
     <section class="timer card" aria-label="Pomodoro timer">
+      <div class="grip" id="grip" title="Drag to move · double-click to reset"></div>
       <div class="modes" role="tablist">
         <button data-mode="focus" role="tab">Focus</button>
         <button data-mode="short" role="tab">Short break</button>
         <button data-mode="long" role="tab">Long break</button>
       </div>
-      <div class="time" id="time" aria-live="off">25:00</div>
+      <div class="time-row">
+        <button class="adj" id="minusBtn" aria-label="1 minute less">−</button>
+        <div class="time" id="time" aria-live="off">25:00</div>
+        <button class="adj" id="plusBtn" aria-label="1 minute more">+</button>
+      </div>
       <div class="progress"><div id="progressBar"></div></div>
       <div class="controls">
         <button id="resetBtn" class="icon" title="Reset (R)" aria-label="Reset">
@@ -35,6 +40,13 @@
       </div>
       <input id="task" type="text" placeholder="What are you working on?" maxlength="80" autocomplete="off">
       <div class="stats"><span id="dots" class="dots"></span><span id="statsText"></span></div>
+    </section>
+
+    <!-- Clock -->
+    <section class="clock card" id="clockCard" aria-label="Clock" title="Drag to move · double-click to reset">
+      <div class="clock-time"><span id="clockTime">12:00</span><span id="clockAmpm"></span></div>
+      <div class="clock-date" id="clockDate"></div>
+      <div class="weather" id="weather" hidden><span id="weatherIcon"></span><span id="weatherTemp"></span></div>
     </section>
 
     <button class="zen-exit icon" id="zenExit" title="Show interface (Z)" aria-label="Show interface">
@@ -58,6 +70,28 @@
       <button class="dock-btn" data-panel="scenes" title="Scenes" aria-label="Scenes">
         <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
       </button>
+      <button class="dock-btn" data-panel="look" title="Customize" aria-label="Customize">
+        <svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 0 0 0 20c1.1 0 2-.9 2-2 0-.5-.2-1-.5-1.3-.3-.4-.5-.8-.5-1.3 0-1.1.9-2 2-2h2.4A5.6 5.6 0 0 0 22 9.8C22 5.5 17.5 2 12 2z"/><circle cx="7.5" cy="10.5" r="1.3"/><circle cx="11" cy="6.5" r="1.3"/><circle cx="16" cy="7.5" r="1.3"/></svg>
+      </button>
+      <span class="sep"></span>
+      <button class="dock-btn" data-panel="todos" title="To-do lists" aria-label="To-do lists">
+        <svg viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+        <span class="badge" id="todoBadge"></span>
+      </button>
+      <button class="dock-btn" data-panel="habits" title="Habits" aria-label="Habits">
+        <svg viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="M22 4L12 14.01l-3-3"/></svg>
+      </button>
+      <button class="dock-btn" data-panel="clocks" title="Stopwatch &amp; countdowns" aria-label="Stopwatch and countdowns">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2 2M9 2h6M12 2v3"/></svg>
+        <span class="badge" id="clockBadge"></span>
+      </button>
+      <button class="dock-btn" data-panel="journal" title="Journal" aria-label="Journal">
+        <svg viewBox="0 0 24 24"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+      </button>
+      <button class="dock-btn" data-panel="calendar" title="Calendar" aria-label="Calendar">
+        <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+      </button>
+      <span class="sep"></span>
       <button class="dock-btn" data-panel="settings" title="Settings" aria-label="Settings">
         <svg viewBox="0 0 24 24"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/></svg>
       </button>
@@ -114,8 +148,49 @@
     <!-- Scenes -->
     <section class="panel card" id="panel-scenes" aria-label="Scenes">
       <header><h2>Scenes</h2><button class="close icon" aria-label="Close"><svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg></button></header>
+      <h3>Lighting</h3>
+      <div class="seg" id="lightingSeg" role="radiogroup" aria-label="Lighting">
+        <button data-tod="auto" role="radio" title="Follows your clock">Auto</button>
+        <button data-tod="morning" role="radio">Morning</button>
+        <button data-tod="afternoon" role="radio">Afternoon</button>
+        <button data-tod="evening" role="radio">Evening</button>
+        <button data-tod="night" role="radio">Night</button>
+      </div>
+      <h3>Scene</h3>
       <div class="scene-grid" id="sceneGrid"></div>
       <label class="check"><input type="checkbox" id="autoMix"> Switch ambient sounds to match the scene</label>
+    </section>
+
+    <!-- Customize -->
+    <section class="panel card" id="panel-look" aria-label="Customize">
+      <header><h2>Customize</h2><button class="close icon" aria-label="Close"><svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg></button></header>
+      <div id="lookControls" class="look"></div>
+    </section>
+
+    <!-- Productivity -->
+    <section class="panel card" id="panel-todos" aria-label="To-do lists">
+      <header><h2>To-do lists</h2><button class="close icon" aria-label="Close"><svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg></button></header>
+      <div class="panel-body" id="todosBody"></div>
+    </section>
+
+    <section class="panel card mid" id="panel-habits" aria-label="Habits">
+      <header><h2>Habits</h2><button class="close icon" aria-label="Close"><svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg></button></header>
+      <div class="panel-body" id="habitsBody"></div>
+    </section>
+
+    <section class="panel card" id="panel-clocks" aria-label="Stopwatch &amp; countdowns">
+      <header><h2>Stopwatch &amp; countdowns</h2><button class="close icon" aria-label="Close"><svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg></button></header>
+      <div class="panel-body" id="clocksBody"></div>
+    </section>
+
+    <section class="panel card wide" id="panel-journal" aria-label="Journal">
+      <header><h2>Journal</h2><button class="close icon" aria-label="Close"><svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg></button></header>
+      <div class="panel-body" id="journalBody"></div>
+    </section>
+
+    <section class="panel card wide" id="panel-calendar" aria-label="Calendar">
+      <header><h2>Calendar</h2><button class="close icon" aria-label="Close"><svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg></button></header>
+      <div class="panel-body" id="calendarBody"></div>
     </section>
 
     <!-- Settings -->
@@ -132,6 +207,34 @@
       <label class="check"><input type="checkbox" id="setAutoFocus"> Start the next focus session automatically</label>
       <label class="field">Chime volume <input type="range" id="setChime" min="0" max="100"> <button type="button" class="pill small" id="testChime">Test</button></label>
       <label class="check"><input type="checkbox" id="setNotify"> Desktop notification when a session ends</label>
+      <h3>Clock</h3>
+      <label class="check"><input type="checkbox" id="setClock"> Show a clock</label>
+      <div id="clockOpts">
+        <div class="field">Format
+          <div class="seg small" id="clockFmt" role="radiogroup" aria-label="Clock format">
+            <button data-fmt="12" role="radio">12-hour</button>
+            <button data-fmt="24" role="radio">24-hour</button>
+          </div>
+        </div>
+        <label class="check"><input type="checkbox" id="setClockSec"> Show seconds</label>
+      </div>
+      <h3>Weather</h3>
+      <label class="check"><input type="checkbox" id="setWeather"> Show local temperature on the clock</label>
+      <div class="field">Units
+        <div class="seg small" id="unitSeg" role="radiogroup" aria-label="Temperature units">
+          <button data-unit="f" role="radio">°F</button>
+          <button data-unit="c" role="radio">°C</button>
+          <button data-unit="both" role="radio">Both</button>
+        </div>
+      </div>
+      <form class="city-row" id="cityForm">
+        <input type="text" id="setCity" placeholder="City, e.g. Portland, OR" autocomplete="off">
+        <button type="submit" class="pill small">Set</button>
+        <button type="button" class="icon" id="useLocation" title="Use my current location" aria-label="Use my current location">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/><circle cx="12" cy="12" r="7"/></svg>
+        </button>
+      </form>
+      <p class="hint" id="weatherPlace"></p>
       <h3>Display</h3>
       <label class="check"><input type="checkbox" id="setIdle"> Fade the interface when the mouse is idle</label>
       <label class="field">Animation
@@ -141,27 +244,77 @@
           <option value="60">60 fps · smoothest</option>
         </select>
       </label>
+      <label class="field">Week starts on
+        <select id="setWeekStart">
+          <option value="0">Sunday</option>
+          <option value="1">Monday</option>
+        </select>
+      </label>
+      <h3>Your data</h3>
+      <p class="hint">Your journal, to-do lists, habits, countdowns, focus history and settings live in this browser. Backups include all of it.</p>
+      <div class="btn-row">
+        <button type="button" class="pill small" id="downloadBackup">Download backup</button>
+        <label class="pill small ghost file-btn">Import backup<input type="file" id="importBackup" accept="application/json,.json" hidden></label>
+      </div>
+      <h3>Google</h3>
+      <h4>Google Drive backup</h4>
+      <div class="btn-row">
+        <button type="button" class="pill small" id="driveSave">Save to Drive</button>
+        <button type="button" class="pill small ghost" id="driveRestore">Restore from Drive</button>
+      </div>
+      <p class="hint drive-status"></p>
+      <label class="check"><input type="checkbox" id="setDriveAuto"> Keep the Drive copy up to date automatically while signed in</label>
+      <h4>Google Calendar</h4>
+      <label class="check"><input type="checkbox" id="setGcalShow"> Show my Google Calendar events in the Calendar</label>
+      <label class="check"><input type="checkbox" id="setGcalLog"> Add finished focus sessions to Google Calendar</label>
+      <div class="btn-row">
+        <button type="button" class="pill small" id="gcalConnect">Connect Google Calendar</button>
+        <button type="button" class="pill small ghost" id="googleSignOut">Sign out of Google</button>
+      </div>
+      <details class="drive-setup">
+        <summary>Google setup</summary>
+        <p class="hint">Drive and Calendar need a free OAuth Client ID from your own Google Cloud project (a one-time, ~5 minute setup — the README walks through it). Sign-in happens in a Google popup; tokens last an hour and aren’t stored.</p>
+        <input type="text" id="setClientId" placeholder="xxxxxxxx.apps.googleusercontent.com" autocomplete="off" spellcheck="false" aria-label="Google OAuth Client ID">
+      </details>
       <h3>Keyboard</h3>
       <dl class="keys">
         <dt>Space</dt><dd>Start / pause timer</dd>
         <dt>R</dt><dd>Reset timer</dd>
         <dt>S</dt><dd>Skip to next session</dd>
         <dt>M</dt><dd>Play / pause music</dd>
+        <dt>↑ ↓</dt><dd>Add / remove a minute (Shift: 5)</dd>
         <dt>N</dt><dd>Next scene</dd>
+        <dt>L</dt><dd>Change lighting</dd>
         <dt>Z</dt><dd>Zen mode</dd>
         <dt>F</dt><dd>Fullscreen</dd>
       </dl>
-      <p class="hint">Everything is saved in this browser only. <button class="link" id="resetStats">Reset today’s count</button></p>
+      <p class="hint">Everything is saved in this browser only. <button class="link" id="resetStats">Reset today’s count</button> · <button class="link" id="resetPos">Reset timer position</button></p>
     </section>
 
     <div class="toast" id="toast" role="status"></div>
   </div>
 
+  <script src="js/config.js"></script>
   <script src="js/core.js"></script>
   <script src="js/ambient.js"></script>
   <script src="js/timer.js"></script>
   <script src="js/music.js"></script>
-  <script src="js/scenes.js"></script>
+  <script src="js/weather.js"></script>
+  <script src="js/scenes/kit.js"></script>
+  <script src="js/scenes/study.js"></script>
+  <script src="js/scenes/cafe.js"></script>
+  <script src="js/scenes/fireplace.js"></script>
+  <script src="js/scenes/park.js"></script>
+  <script src="js/scenes/campfire.js"></script>
+  <script src="js/scenes/dock.js"></script>
+  <script src="js/habits.js"></script>
+  <script src="js/todos.js"></script>
+  <script src="js/clocks.js"></script>
+  <script src="js/journal.js"></script>
+  <script src="js/google.js"></script>
+  <script src="js/backup.js"></script>
+  <script src="js/gcal.js"></script>
+  <script src="js/calendar.js"></script>
   <script src="js/app.js"></script>
 </body>
 </html>
