@@ -47,13 +47,25 @@
     const s = L.store.load('stats', null);
     T.stats = s && s.date === today() ? s : freshStats();
   }
+  // Per-day history for the calendar: { 'YYYY-MM-DD': { sessions, minutes } }
+  T.history = () => L.store.load('focusLog', {});
   function addStats(minutes) {
     refreshStats();
     T.stats.sessions++;
     T.stats.minutes += minutes;
     L.store.save('stats', T.stats);
+    const log = T.history(), key = L.util.dayKey();
+    log[key] = { sessions: T.stats.sessions, minutes: T.stats.minutes };
+    L.store.save('focusLog', log);
   }
-  T.resetStats = () => { T.stats = freshStats(); L.store.save('stats', T.stats); emit(); };
+  T.resetStats = () => {
+    T.stats = freshStats();
+    L.store.save('stats', T.stats);
+    const log = T.history();
+    delete log[L.util.dayKey()];
+    L.store.save('focusLog', log);
+    emit();
+  };
 
   function complete(silent, skipped) {
     const was = T.mode;

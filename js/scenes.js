@@ -172,6 +172,62 @@
     };
   }
 
+  // ---------- customisation (env.look) ----------
+  // Colours are optional overrides; null means "use the scene's own colour".
+  const DEFAULT_LOOK = { outfit: null, hair: null, accent: null, tent: null, pet: 'cat', petColor: null, birds: false, friend: false };
+  const lookOf = (env) => ({ ...DEFAULT_LOOK, ...(env.look || {}) });
+  function shade(hex, amt) { // amt < 0 darkens, > 0 lightens
+    const n = parseInt(hex.slice(1), 16), f = (v) => round(amt < 0 ? v * (1 + amt) : v + (255 - v) * amt);
+    return `rgb(${f(n >> 16)},${f((n >> 8) & 255)},${f(n & 255)})`;
+  }
+  const outfit = (lk, def) => ({ top: lk.outfit || def, shade: shade(lk.outfit || def, -0.25) });
+  const PET_COLOR = { cat: '#3b3450', dog: '#b07a4a' };
+
+  // Pet sitting with its back to us. gy = the surface it sits on.
+  function drawPet(c, lk, x, gy, t) {
+    if (lk.pet === 'none') return;
+    const col = lk.petColor || PET_COLOR[lk.pet], dark = shade(col, -0.3);
+    if (lk.pet === 'dog') {
+      line(c, [x + 8, gy - 5, x + 13 + sin(t * 12) * 3, gy - 13], col, 2.5); // wagging tail
+      ellipse(c, x, gy - 9, 10, 9, col);
+      circle(c, x, gy - 21, 7, col);
+      ellipse(c, x - 6.5, gy - 20, 2.5, 5.5, dark, 0.25);
+      ellipse(c, x + 6.5, gy - 20, 2.5, 5.5, dark, -0.25);
+      rect(c, x - 4, gy - 15, 8, 2, '#c0504d'); // collar
+      return;
+    }
+    ellipse(c, x, gy - 8, 9, 8, col);
+    circle(c, x, gy - 19, 6, col);
+    poly(c, [x - 6, gy - 21, x - 5, gy - 29, x - 1, gy - 24], col);
+    poly(c, [x + 6, gy - 21, x + 5, gy - 29, x + 1, gy - 24], col);
+    const sw = sin(t * 1.1) * 5;
+    c.strokeStyle = col; c.lineWidth = 3; c.lineCap = 'round';
+    c.beginPath(); c.moveTo(x + 7, gy - 2); c.quadraticCurveTo(x + 22, gy - 1, x + 22 + sw * 0.5, gy - 11 - abs(sw) * 0.3); c.stroke();
+  }
+
+  // Small songbird that pecks and hops now and then. y = the perch.
+  function perchBird(c, x, y, t, ph = 0, col = '#8a6a4a', flip = false) {
+    const d = flip ? -1 : 1, peck = sin(t * 0.7 + ph) > 0.85 ? 2 : 0;
+    const by = y - max(0, sin(t * 0.5 + ph * 2) - 0.97) * 60;
+    poly(c, [x - 3 * d, by - 3, x - 8 * d, by - 5, x - 7 * d, by - 1], shade(col, -0.25));
+    ellipse(c, x, by - 3, 4, 3, col);
+    ellipse(c, x + d, by - 2, 2.5, 1.6, '#eadcc6');
+    circle(c, x + 3 * d, by - 6 + peck, 2.2, col);
+    rect(c, x + 5 * d, by - 6 + peck, 2 * d, 1, '#e8a040');
+    rect(c, x + 3.5 * d, by - 7 + peck, 1, 1, '#111');
+    rect(c, x - 1, by, 1, 2, '#5a4030'); rect(c, x + 1, by, 1, 2, '#5a4030');
+  }
+
+  function owl(c, x, y, t) {
+    ellipse(c, x, y - 7, 5, 7, '#5a4636');
+    poly(c, [x - 5, y - 12, x - 4, y - 16, x - 1, y - 13], '#5a4636');
+    poly(c, [x + 5, y - 12, x + 4, y - 16, x + 1, y - 13], '#5a4636');
+    ellipse(c, x, y - 4, 3, 3.5, '#7a6450');
+    const eye = sin(t * 0.9) > 0.97 ? '#5a4636' : '#ffd24a';
+    circle(c, x - 2, y - 10, 1.6, eye); circle(c, x + 2, y - 10, 1.6, eye);
+    rect(c, x - 0.5, y - 9, 1, 2, '#d8a040');
+  }
+
   // Seated person seen from behind (they're looking at the same view we are).
   // x = centre, y = shoulder line.
   function backFigure(c, x, y, o) {
@@ -277,7 +333,7 @@
 
       return {
         draw(c, t, dt, env) {
-          const P = PHASES[env.tod], R = ROOM[env.tod], lights = P.lights;
+          const P = PHASES[env.tod], R = ROOM[env.tod], lights = P.lights, lk = lookOf(env), fit = outfit(lk, '#b86b77');
 
           // view through the window
           c.save();
@@ -312,16 +368,6 @@
           rect(c, win.x - 14, base + 3, win.w + 28, 6, R.sill);
           rect(c, win.x - 14, base + 3, win.w + 28, 1, R.sillHi);
 
-          // cat on the sill, watching the city
-          const kx = win.x + 44, ky = base + 3, cc = R.cat;
-          ellipse(c, kx, ky - 8, 9, 8, cc);
-          circle(c, kx, ky - 19, 6, cc);
-          poly(c, [kx - 6, ky - 21, kx - 5, ky - 29, kx - 1, ky - 24], cc);
-          poly(c, [kx + 6, ky - 21, kx + 5, ky - 29, kx + 1, ky - 24], cc);
-          const sw = sin(t * 1.1) * 5;
-          c.strokeStyle = cc; c.lineWidth = 3; c.lineCap = 'round';
-          c.beginPath(); c.moveTo(kx + 7, ky - 2); c.quadraticCurveTo(kx + 22, ky - 1, kx + 22 + sw * 0.5, ky - 11 - abs(sw) * 0.3); c.stroke();
-
           // fairy lights (string + bulbs; their glow comes later)
           c.strokeStyle = 'rgba(40,34,60,0.8)'; c.lineWidth = 1;
           c.beginPath(); bulbs.forEach((b, i) => (i ? c.lineTo(b.x, b.y) : c.moveTo(b.x, b.y))); c.stroke();
@@ -335,6 +381,8 @@
 
           // ---- objects layer ----
           const f = layer.begin(W, H);
+          drawPet(f, { ...lk, petColor: lk.petColor || (lk.pet === 'cat' ? R.cat : null) }, win.x + 44, base + 3, t); // on the sill, watching the city
+          if (lk.birds) perchBird(f, win.x + win.w + 24, win.y - 17, t, 0, '#7a8ab0', true); // budgie on the curtain rod
           const bx = cx - 168;
           rect(f, bx - 16, dy - 6, 32, 6, '#7c4a5c'); rect(f, bx - 14, dy - 11, 28, 5, '#46708a'); rect(f, bx - 15, dy - 17, 30, 6, '#b08a4c');
           rect(f, bx + 14, dy - 5, 1, 4, '#e8dcc4'); rect(f, bx + 13, dy - 10, 1, 3, '#e8dcc4');
@@ -354,7 +402,7 @@
           f.fillRect(cx - 33, dy - 37, 66, 34);
           rect(f, cx - 40, dy - 2, 80, 3, '#9a9aaa');
           backFigure(f, cx, 180, {
-            t, torso: 100, top: '#b86b77', shade: '#8e4f5e', hair: '#2b1d2a', phones: '#d9d2ea',
+            t, torso: 100, top: fit.top, shade: fit.shade, hair: lk.hair || '#2b1d2a', phones: lk.accent || '#d9d2ea',
             rim: P.moon ? 'rgba(170,200,255,0.6)' : P.rim, bob: sin(t * TAU * 75 / 60) * 0.8,
             armL: round(sin(t * 9) * 0.8), armR: round(sin(t * 9 + 1.7) * 0.8),
           });
@@ -441,7 +489,7 @@
 
       return {
         draw(c, t, dt, env) {
-          const P = PHASES[env.tod], K = PARK[env.tod];
+          const P = PHASES[env.tod], K = PARK[env.tod], lk = lookOf(env), fit = outfit(lk, '#d9a066');
           sky(c, 0, 0, W, gy, P.sky);
           stars(c, starList, t, P.stars);
           sunOrMoon(c, P, cx + K.sun[0], K.sun[1]);
@@ -460,16 +508,23 @@
           const lp = cx - 78, on = P.lights > 0.3;
           rect(f, lp - 1, 150, 3, 80, '#2f2b3b'); rect(f, lp - 5, 146, 11, 6, '#2f2b3b');
           rect(f, lp - 3, 152, 7, 5, on ? '#ffe2a6' : '#cfd3d8'); rect(f, lp - 4, 226, 9, 4, '#2f2b3b');
-          const bx = cx + 10;
+          const bx = cx + 10, me = lk.friend ? bx - 22 : bx - 4;
           rect(f, bx - 46, 213, 92, 4, '#9b6440');
           rect(f, bx - 42, 217, 3, 13, '#2f2b3b'); rect(f, bx + 39, 217, 3, 13, '#2f2b3b');
-          backFigure(f, bx - 4, 184, {
-            t, torso: 32, top: '#d9a066', shade: '#b07c48', hair: '#4a2c2a', longHair: true,
-            phones: '#3a3548', rim: P.rim, bob: sin(t * 1.3) * 0.6,
+          if (lk.friend) backFigure(f, bx + 24, 186, { t, torso: 30, top: '#6f8fb8', shade: '#56729a', hair: '#231c24', rim: P.rim, bob: sin(t * 1.1 + 2) * 0.6 });
+          backFigure(f, me, 184, {
+            t, torso: 32, top: fit.top, shade: fit.shade, hair: lk.hair || '#4a2c2a', longHair: true,
+            phones: lk.accent || '#3a3548', rim: P.rim, bob: sin(t * 1.3) * 0.6,
           });
           rect(f, bx - 48, 192, 96, 5, '#a36b45'); rect(f, bx - 48, 196, 96, 1, '#7d4f33');
           rect(f, bx - 48, 201, 96, 5, '#a36b45'); rect(f, bx - 48, 205, 96, 1, '#7d4f33');
           rect(f, bx - 44, 188, 3, 30, '#2f2b3b'); rect(f, bx + 41, 188, 3, 30, '#2f2b3b');
+          drawPet(f, lk, bx + (lk.friend ? 64 : 58), 231, t); // on the path beside the bench
+          if (lk.birds && !P.moon) {
+            perchBird(f, cx - 44, 235, t, 0);
+            perchBird(f, cx - 32, 237, t, 2.1, '#7a5a40', true);
+            perchBird(f, cx + 118, 236, t, 4.2);
+          }
           layer.end(c, P.tint);
           if (on) {
             glow(c, lp + 1, 155, 34, [255, 220, 160], 0.4 * P.lights);
@@ -547,8 +602,28 @@
     });
   }
 
-  function guitarist(c, x, seat, t) {
-    const skin = '#f1c7a3', sweater = '#6f8fb8', sleeve = '#5a78a0', hair = '#3a2420';
+  // Friend on a stump, toasting a marshmallow over the fire at (fx, fy).
+  function camper(c, x, seat, t, fx, fy) {
+    const skin = '#c98f68', top = '#8a6aa8', hair = '#1e1a1f', bob = sin(t * 0.9 + 1) * 0.6;
+    rect(c, x - 12, seat, 24, 10, '#6a4a30'); ellipse(c, x, seat, 12, 3, '#8a6848');
+    rect(c, x - 11, seat - 3, 9, 7, '#40404f'); rect(c, x + 2, seat - 3, 9, 7, '#40404f');
+    rect(c, x - 10, seat + 4, 7, 14, '#35354a'); rect(c, x + 3, seat + 4, 7, 14, '#35354a');
+    rect(c, x - 11, seat + 16, 9, 3, '#241c1c'); rect(c, x + 2, seat + 16, 9, 3, '#241c1c');
+    rrect(c, x - 12, seat - 34 + bob * 0.3, 24, 34, 8, top);
+    const hy = seat - 44 + bob;
+    circle(c, x, hy, 10, skin);
+    c.fillStyle = hair; c.beginPath(); c.arc(x, hy - 1, 10.5, PI * 1.05, PI * 1.95); c.fill();
+    rect(c, x - 10, hy - 4, 20, 3, hair);
+    rect(c, x + 2, hy + 1, 2, 2, '#1e1a1f'); rect(c, x + 6, hy + 1, 2, 2, '#1e1a1f');
+    const hx = x + 12, hy2 = seat - 20, mx = fx - 12, my = fy - 30 + sin(t * 1.3) * 1.5;
+    line(c, [x + 8, seat - 30, x + 14, seat - 22, hx, hy2], shade(top, -0.2), 5);
+    line(c, [hx, hy2, mx, my], '#8a6a4a', 1);
+    rect(c, mx - 1.5, my - 1.5, 4, 3, '#f3ead8'); rect(c, mx - 1.5, my + 0.5, 4, 1, '#d8a868');
+  }
+
+  function guitarist(c, x, seat, t, lk) {
+    const skin = '#f1c7a3', sweater = lk.outfit || '#6f8fb8', sleeve = shade(sweater, -0.15), hair = lk.hair || '#3a2420';
+    const hat = lk.accent || '#c9574a';
     const bob = sin(t * TAU * 0.6) * 0.8;
     rect(c, x - 12, seat - 3, 10, 7, '#3a3a55'); rect(c, x + 2, seat - 3, 10, 7, '#3a3a55');
     rect(c, x - 11, seat + 4, 8, 13, '#2f2f48'); rect(c, x + 3, seat + 4, 8, 13, '#2f2f48');
@@ -559,8 +634,8 @@
     circle(c, hx, hy, 11, skin);
     c.fillStyle = hair; c.beginPath(); c.arc(hx, hy - 1, 11.5, PI * 0.95, PI * 2.05); c.fill();
     rect(c, hx - 12, hy - 2, 4, 12, hair); rect(c, hx + 8, hy - 2, 4, 12, hair);
-    c.fillStyle = '#c9574a'; c.beginPath(); c.arc(hx, hy - 4, 12, PI, 0); c.fill();
-    rect(c, hx - 12.5, hy - 6, 25, 4, '#a94639');
+    c.fillStyle = hat; c.beginPath(); c.arc(hx, hy - 4, 12, PI, 0); c.fill();
+    rect(c, hx - 12.5, hy - 6, 25, 4, shade(hat, -0.18));
     circle(c, hx, hy - 16, 3, '#e8d9c8');
     rect(c, hx - 6, hy + 2, 3, 1, hair); rect(c, hx + 3, hy + 2, 3, 1, hair); // eyes closed, enjoying it
     c.globalAlpha = 0.5; rect(c, hx - 8, hy + 4, 3, 2, '#f08a7a'); rect(c, hx + 5, hy + 4, 3, 2, '#f08a7a'); c.globalAlpha = 1;
@@ -598,7 +673,7 @@
 
       return {
         draw(c, t, dt, env) {
-          const P = PHASES[env.tod], K = CAMP[env.tod];
+          const P = PHASES[env.tod], K = CAMP[env.tod], lk = lookOf(env), tent = lk.tent || '#5a4637';
           sky(c, 0, 0, W, 200, P.sky);
           stars(c, starList, t, P.stars);
 
@@ -628,10 +703,10 @@
           // ---- objects layer: tent, back of the fire pit, log seat, guitarist ----
           const f = layer.begin(W, H);
           const tx = cx - 125;
-          poly(f, [tx, 172, tx - 46, 226, tx + 46, 226], '#5a4637');
+          poly(f, [tx, 172, tx - 46, 226, tx + 46, 226], tent);
           poly(f, [tx, 172, tx + 46, 226, tx, 226], `rgba(255,160,90,${0.18 * K.fire})`);
           poly(f, [tx, 184, tx - 14, 226, tx + 14, 226], '#1c1418');
-          poly(f, [tx, 184, tx + 14, 226, tx + 22, 226, tx + 3, 190], '#6e5542');
+          poly(f, [tx, 184, tx + 14, 226, tx + 22, 226, tx + 3, 190], shade(tent, 0.15));
           rect(f, tx - 1, 169, 2, 4, '#3a2a20');
           line(f, [tx - 46, 226, tx - 58, 232], '#2a2020', 1);
           const ring = (cc, front) => stones.forEach((s) => {
@@ -643,8 +718,12 @@
           for (const a of [0.28, -0.28]) { f.save(); f.translate(fx, fy - 2); f.rotate(a); rect(f, -18, -2.5, 36, 5, '#4d2e1d'); f.restore(); }
           rect(f, gx - 26, 222, 52, 9, '#5a3a26');
           ellipse(f, gx + 26, 226.5, 3, 4.5, '#7a5236');
-          guitarist(f, gx, 222, t);
+          guitarist(f, gx, 222, t, lk);
+          if (lk.friend) camper(f, cx - 58, 222, t, fx, fy);
+          drawPet(f, lk, gx + 40, 238, t);
+          if (lk.birds && !P.moon) perchBird(f, tx, 172, t, 1);
           layer.end(c, P.tint);
+          if (lk.birds && P.moon) owl(c, tx, 172, t); // untinted so its eyes glow
           glow(c, tx - 3, 216, 14, [255, 200, 120], 0.25 * P.lights);
 
           flames(c, fx, fy - 2, t);
@@ -724,7 +803,7 @@
 
       return {
         draw(c, t, dt, env) {
-          const P = PHASES[env.tod], K = SEA[env.tod], sx = cx + K.sun[0], sy = K.sun[1];
+          const P = PHASES[env.tod], K = SEA[env.tod], sx = cx + K.sun[0], sy = K.sun[1], lk = lookOf(env), fit = outfit(lk, '#7f9c8a');
           sky(c, 0, 0, W, hz, K.sky || P.sky);
           stars(c, starList, t, P.stars);
           sunOrMoon(c, P, sx, sy, K.sunR);
@@ -782,10 +861,14 @@
           for (let x = 4; x < dockEnd; x += 10) rect(f, x, 216, 1, 4, '#654535');
           const lnx = cx - 16;
           rect(f, lnx - 3, 208, 6, 8, '#2e2230'); rect(f, lnx - 2, 210, 4, 5, P.lights > 0.3 ? '#ffd88a' : '#d8d2c0');
+          const rim = P.moon ? 'rgba(200,210,255,0.5)' : P.rim;
+          if (lk.friend) backFigure(f, cx - 52, 191, { t, torso: 25, top: '#c98a6a', shade: '#a86f52', hair: '#241a18', longHair: true, rim, bob: sin(t * 0.8 + 2) * 0.5 });
+          drawPet(f, lk, lk.friend ? cx - 92 : cx - 44, 216, t);
           backFigure(f, cx + 14, 190, {
-            t, torso: 26, top: '#7f9c8a', shade: '#5f7a6b', hair: '#4a2e28',
-            rim: P.moon ? 'rgba(200,210,255,0.5)' : P.rim, bob: sin(t * 0.9) * 0.5,
+            t, torso: 26, top: fit.top, shade: fit.shade, hair: lk.hair || '#4a2e28', phones: lk.accent || null,
+            rim, bob: sin(t * 0.9) * 0.5,
           });
+          if (lk.birds && !P.moon) perchBird(f, dockEnd - 4, 216, t, 3, '#e4e4ec', true);
           const tipX = cx + 80, tipY = 150 + sin(t * 0.9) * 1.5, bbx = cx + 104, bby = 246 + sin(t * 1.6) * 0.8;
           line(f, [cx + 30, 210, tipX, tipY], '#2a1e1e', 1.5);
           layer.end(c, P.tint);

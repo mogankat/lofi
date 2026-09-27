@@ -2,7 +2,7 @@
 (function () {
   'use strict';
   const L = window.Lofi;
-  const { Timer, Ambient, Music, Weather, scenes } = L;
+  const { Timer, Ambient, Music, Weather, scenes, util: U } = L;
   const $ = (s) => document.querySelector(s);
   const $$ = (s) => [...document.querySelectorAll(s)];
 
@@ -12,16 +12,11 @@
     x: '<svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>',
   };
 
-  const prefs = L.store.load('prefs', { scene: 'study', fps: 30, idleFade: true, autoMix: false, task: '', lighting: 'auto', timerPos: null });
+  const LOOK = { outfit: null, hair: null, accent: null, tent: null, pet: 'cat', petColor: null, birds: false, friend: false };
+  const prefs = L.store.load('prefs', { scene: 'study', fps: 30, idleFade: true, autoMix: false, task: '', lighting: 'auto', timerPos: null, weekStart: 0, look: LOOK });
+  prefs.look = { ...LOOK, ...prefs.look };
   const savePrefs = () => L.store.save('prefs', prefs);
-
-  function toast(msg, ms = 4500) {
-    const el = $('#toast');
-    el.textContent = msg;
-    el.classList.add('show');
-    clearTimeout(toast.t);
-    toast.t = setTimeout(() => el.classList.remove('show'), ms);
-  }
+  const toast = U.toast;
 
   // ======================= Scene rendering =======================
   const canvas = $('#scene'), ctx = canvas.getContext('2d');
@@ -72,7 +67,7 @@
       tod = nowTod;
       renderThumbs();
     }
-    const env = { tod, rain: rainAmount(), flash: weather.flash, drawRain: (c, r, speed) => drawRain(c, r, speed || 1, dt) };
+    const env = { tod, look: prefs.look, rain: rainAmount(), flash: weather.flash, drawRain: (c, r, speed) => drawRain(c, r, speed || 1, dt) };
 
     ctx.save();
     inst.draw(ctx, t, dt, env);
@@ -141,7 +136,7 @@
   const thumbs = [];
   function renderThumbs() {
     for (const th of thumbs) {
-      const env = { tod: currentTod(), rain: 0, flash: 0, drawRain() {} }, i = th.scene.create(480, 270);
+      const env = { tod: currentTod(), look: prefs.look, rain: 0, flash: 0, drawRain() {} }, i = th.scene.create(480, 270);
       for (let k = 0; k < 20; k++) { th.c.save(); i.draw(th.c, 4 + k * 0.1, 0.1, env); th.c.restore(); } // warm up particles
     }
   }
@@ -171,6 +166,57 @@
       savePrefs();
       if (auto.checked) Ambient.setMix(scene.mix);
     });
+  }
+
+  // ---- scene customisation ----
+  const SWATCHES = {
+    outfit: ['#b86b77', '#d9a066', '#6f8fb8', '#7f9c8a', '#8a6aa8', '#e8dccb', '#3b3b4f', '#c8584a'],
+    hair: ['#2b1d2a', '#4a2c2a', '#7a4a2a', '#c89a5a', '#e8d8b0', '#8a8a96', '#c0504d', '#5a7ad0'],
+    accent: ['#d9d2ea', '#3a3548', '#c9574a', '#f0c05a', '#6fb0a0', '#e890b0', '#5a78c0', '#f4f4f4'],
+    tent: ['#5a4637', '#c0504d', '#3f6f8f', '#6a8a4a', '#e0a040', '#7a5a9a'],
+    petColor: ['#3b3450', '#e8e2d8', '#d98a40', '#8a8a96', '#6a4a30', '#1a1a22'],
+  };
+  function setLook(key, value) {
+    prefs.look[key] = value;
+    savePrefs();
+    renderLook();
+    renderThumbs();
+  }
+  function colorRow(key, label) {
+    const custom = U.el('input', { type: 'color', class: 'swatch-custom', title: 'Pick any colour', 'aria-label': `${label}: custom colour` });
+    custom.addEventListener('input', () => setLook(key, custom.value));
+    return U.el('div', { class: 'look-row', 'data-key': key },
+      U.el('span', { class: 'look-label', text: label }),
+      U.el('div', { class: 'swatches' },
+        U.el('button', { type: 'button', class: 'swatch auto', text: 'Auto', title: 'Scene’s own colour', 'data-value': '', onclick: () => setLook(key, null) }),
+        ...SWATCHES[key].map((c) => U.el('button', { type: 'button', class: 'swatch', style: `--c:${c}`, 'data-value': c, 'aria-label': `${label} ${c}`, onclick: () => setLook(key, c) })),
+        custom));
+  }
+  function buildLook() {
+    $('#lookControls').append(
+      colorRow('outfit', 'Outfit'), colorRow('hair', 'Hair'), colorRow('accent', 'Headphones & hat'), colorRow('tent', 'Tent'),
+      U.el('div', { class: 'look-row' }, U.el('span', { class: 'look-label', text: 'Pet' }),
+        U.el('div', { class: 'seg small', id: 'petSeg' }, ...[['none', 'None'], ['cat', 'Cat'], ['dog', 'Dog']].map(([v, t]) =>
+          U.el('button', { type: 'button', 'data-pet': v, text: t, onclick: () => setLook('pet', v) })))),
+      colorRow('petColor', 'Pet colour'),
+      U.el('label', { class: 'check' }, U.el('input', { type: 'checkbox', id: 'lookBirds', onchange: (e) => setLook('birds', e.target.checked) }), 'Birds (an owl at night by the campfire)'),
+      U.el('label', { class: 'check' }, U.el('input', { type: 'checkbox', id: 'lookFriend', onchange: (e) => setLook('friend', e.target.checked) }), 'A friend (park, campfire and dock)'),
+      U.el('button', { type: 'button', class: 'link', text: 'Reset to defaults', onclick: () => { prefs.look = { ...LOOK }; savePrefs(); renderLook(); renderThumbs(); } }),
+    );
+    renderLook();
+  }
+  function renderLook() {
+    $$('.look-row[data-key]').forEach((row) => {
+      const v = prefs.look[row.dataset.key] || '';
+      row.querySelectorAll('.swatch').forEach((b) => b.classList.toggle('active', b.dataset.value === v));
+      const custom = row.querySelector('.swatch-custom');
+      custom.classList.toggle('active', !!v && !SWATCHES[row.dataset.key].includes(v));
+      if (v) custom.value = v;
+    });
+    $$('#petSeg button').forEach((b) => b.classList.toggle('active', b.dataset.pet === prefs.look.pet));
+    $('.look-row[data-key="petColor"]').hidden = prefs.look.pet === 'none';
+    $('#lookBirds').checked = prefs.look.birds;
+    $('#lookFriend').checked = prefs.look.friend;
   }
 
   // ======================= Timer UI =======================
@@ -442,6 +488,20 @@
     $('#resetStats').addEventListener('click', () => Timer.resetStats());
     $('#resetPos').addEventListener('click', resetTimerPos);
 
+    const week = $('#setWeekStart');
+    week.value = String(prefs.weekStart || 0);
+    week.addEventListener('change', () => { prefs.weekStart = +week.value; savePrefs(); });
+
+    $('#downloadBackup').addEventListener('click', () => L.Backup.downloadBackup());
+    $('#importBackup').addEventListener('change', (e) => { const f = e.target.files[0]; if (f) L.Backup.importFile(f); e.target.value = ''; });
+    $('#driveSave').addEventListener('click', () => L.Backup.saveToDrive());
+    $('#driveRestore').addEventListener('click', () => L.Backup.restoreFromDrive());
+    const cid = $('#setClientId');
+    cid.value = L.store.load('googleClientId', '');
+    cid.addEventListener('change', () => { L.store.save('googleClientId', cid.value.trim()); L.Backup.preload(); L.Backup.renderStatus(); });
+    if (!L.Backup.clientId()) $('.drive-setup').open = true;
+    L.Backup.renderStatus();
+
     const locate = () => Weather.locate().catch((e) => { toast(e.message, 6000); $('#setCity').focus(); });
     $('#setWeather').addEventListener('change', (e) => {
       Weather.setOn(e.target.checked);
@@ -464,12 +524,33 @@
 
   // ======================= Panels, zen, idle, keys =======================
   let openPanel = null;
+  const MODULES = { habits: L.Habits, todos: L.Todos, clocks: L.Clocks, journal: L.Journal, calendar: L.Calendar };
   function togglePanel(name) {
     const next = openPanel === name ? null : name;
+    const prev = MODULES[openPanel];
+    if (prev && prev.onClose && openPanel !== next) prev.onClose();
     $$('.panel').forEach((p) => p.classList.toggle('open', p.id === 'panel-' + next));
     $$('.dock-btn[data-panel]').forEach((b) => b.classList.toggle('active', b.dataset.panel === next));
     openPanel = next;
+    const mod = MODULES[next];
+    if (mod && mod.onOpen) mod.onOpen();
   }
+  L.ui = {
+    openPanel: (name) => { if (openPanel !== name) togglePanel(name); },
+    setTask(text) {
+      task.value = text;
+      prefs.task = text;
+      savePrefs();
+      toast(`Focusing on “${text}”. Press Start when you’re ready.`);
+    },
+  };
+
+  function renderBadges() {
+    $('#todoBadge').textContent = L.Todos.openCount() || '';
+    $('#clockBadge').textContent = L.Clocks.runningCount() || '';
+  }
+  L.Todos.onChange = renderBadges;
+  L.Clocks.onChange = renderBadges;
   $$('[data-panel]').forEach((b) => b.addEventListener('click', () => togglePanel(b.dataset.panel)));
   $$('.panel .close').forEach((b) => b.addEventListener('click', () => togglePanel(null)));
   document.addEventListener('pointerdown', (e) => {
@@ -494,17 +575,18 @@
     document.body.classList.remove('idle');
     clearTimeout(idleTimer);
     idleTimer = setTimeout(() => {
-      const typing = document.activeElement && document.activeElement.matches('input, select');
+      const typing = document.activeElement && document.activeElement.matches('input, select, textarea');
       if (prefs.idleFade && !openPanel && !typing) document.body.classList.add('idle');
     }, 8000);
   }
   ['mousemove', 'pointerdown', 'keydown', 'wheel', 'touchstart'].forEach((ev) => addEventListener(ev, poke, { passive: true }));
 
   document.addEventListener('keydown', (e) => {
-    if (e.target.matches('input[type="text"], input[type="number"], select')) {
+    if (e.target.matches('input:not([type="range"]):not([type="checkbox"]):not([type="radio"]):not([type="color"]), textarea, select')) {
       if (e.key === 'Escape') e.target.blur();
       return;
     }
+    if (e.key === ' ' && e.target.matches('input[type="checkbox"], summary')) return; // let Space tick boxes
     if (e.metaKey || e.ctrlKey || e.altKey || (e.repeat && !e.key.startsWith('Arrow'))) return;
     const k = e.key.toLowerCase();
     if (k === ' ') { e.preventDefault(); Timer.toggle(); }
@@ -531,8 +613,16 @@
   addEventListener('resize', () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(() => { resize(); applyTimerPos(); }, 150); });
   resize();
   buildSceneGrid();
+  buildLook();
   buildSounds();
   buildSettings();
+  L.Habits.init($('#habitsBody'));
+  L.Todos.init($('#todosBody'));
+  L.Clocks.init($('#clocksBody'));
+  L.Journal.init($('#journalBody'));
+  L.Calendar.init($('#calendarBody'));
+  L.Backup.preload();
+  renderBadges();
   renderMusic();
   Timer.init();
   Weather.init();
