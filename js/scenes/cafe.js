@@ -1,30 +1,31 @@
-// Café window seat looking out on a street: shops, passing cars and people.
+// Café window seat looking out on a street, with passing cars and people: shops
+// across the road in the city, fields in the countryside, the sea at the beach.
 (function () {
   'use strict';
   const K = window.Lofi.sceneKit;
-  const { TAU, PHASES, rng, rect, circle, ellipse, rrect, poly, line, vgrad, glow, pool, vignette, shade, sky, makeStars, stars, sunOrMoon, makeFlock, flock, makeLayer, lookOf, headwear, friendWear, outfit, FRIEND, drawPet, perchBird, owl, backFigure, legs, steam } = K;
+  const { TAU, PHASES, rng, rect, circle, ellipse, rrect, poly, line, vgrad, glow, pool, vignette, shade, makeLayer, lookOf, headwear, friendWear, outfit, FRIEND, drawPet, perchBird, owl, backFigure, legs, steam } = K;
   const { sin, round, random } = Math;
 
   const CAFE = {
     morning: {
       wall: ['#7a5644', '#5a3e30'], frame: '#3a2a22', top: '#c08e5e', counter: ['#6e4a32', '#4a3020'],
       facade: ['#e0c2a8', '#c8a8b8', '#b0c0d0', '#e6d098'], road: '#8c8c96', walk: '#bdb4aa', trim: '#f4ece0',
-      shop: 'rgba(225,238,250,0.55)', up: '#a3b3c8', bird: '#3a3a4a', sun: [0.18, 0.12],
+      shop: 'rgba(225,238,250,0.55)', up: '#a3b3c8',
     },
     afternoon: {
       wall: ['#7e5a46', '#5e4232'], frame: '#3a2a22', top: '#c8955f', counter: ['#744e34', '#4e3322'],
       facade: ['#ecccb0', '#d4b2c2', '#b8cadc', '#f0da9e'], road: '#909098', walk: '#c6bdb2', trim: '#faf4e8',
-      shop: 'rgba(230,242,255,0.6)', up: '#adbdd2', bird: '#3a3a4a', sun: null,
+      shop: 'rgba(230,242,255,0.6)', up: '#adbdd2',
     },
     evening: {
       wall: ['#5e3e32', '#422a22'], frame: '#2e201a', top: '#a87448', counter: ['#583a28', '#3a261a'],
       facade: ['#b88a80', '#9a7690', '#7e8aa6', '#c0a070'], road: '#6a6070', walk: '#948680', trim: '#e8d0c0',
-      shop: null, up: '#6a6a88', bird: '#3a2a3a', sun: [0.85, 0.2],
+      shop: null, up: '#6a6a88',
     },
     night: {
       wall: ['#3a2620', '#281a16'], frame: '#221812', top: '#8a5c38', counter: ['#40291c', '#2a1a12'],
       facade: ['#3e3656', '#352e4c', '#2e3450', '#453a50'], road: '#24222e', walk: '#3a3644', trim: '#5a5270',
-      shop: null, up: '#1e1c2c', bird: null, sun: null,
+      shop: null, up: '#1e1c2c',
     },
   };
   const AWNING = [['#c8584a', '#f2e6d8'], ['#3f6f8f', '#f2e6d8'], ['#5a8a5a', '#f2e6d8'], ['#d8a040', '#6a3a2a']];
@@ -32,10 +33,10 @@
   const COAT = ['#6a5a8a', '#b86a5a', '#3f6f8f', '#8a7a5a', '#4a4a5a', '#c89a5a'];
 
   window.Lofi.scenes.register({
-    id: 'cafe', name: 'Café window', outdoor: false,
+    id: 'cafe', name: 'Café window', group: 'town', outdoor: false,
     mix: { cafe: 0.45, rain: 0.25 },
     create(W, H) {
-      const r = rng(51), cx = round(W / 2), layer = makeLayer(), birds = makeFlock();
+      const r = rng(51), cx = round(W / 2), layer = makeLayer();
       const win = { x: cx - 200, y: 18, w: 400, h: 150 }, base = win.y + win.h;
       const street = { shops: 128, road: 133, near: 152 };
       const shops = [];
@@ -47,15 +48,15 @@
         shops.push({ x, w, h, face: (r() * 4) | 0, awning: AWNING[(r() * 4) | 0], ups });
         x += w + 2;
       }
-      const starList = makeStars(r, 30, win.x, win.w, win.y, 20);
+      const view = K.viewer({ x: win.x, y: win.y, w: win.w, h: street.shops - win.y }, { seed: 51, window: false }); // across the road
       const lamps = [win.x + 70, win.x + 230, win.x + 370];
       const cars = [], people = [];
       let nextCar = 1, nextPerson = 0.5;
 
-      function drawStreet(c, t, dt, env, P, C) {
+      function drawStreet(c, t, dt, env, P, C, city) {
         const lights = P.lights, rain = env.fx.rain > 0.1;
-        // buildings
-        for (const s of shops) {
+        // shops across the road (in the city)
+        if (city) for (const s of shops) {
           const top = street.shops - s.h;
           rect(c, s.x, top, s.w, s.h, C.facade[s.face]);
           rect(c, s.x, top, s.w, 3, shade(C.facade[s.face], -0.15)); // cornice
@@ -138,13 +139,9 @@
           // view through the window
           c.save();
           c.beginPath(); c.rect(win.x, win.y, win.w, win.h); c.clip();
-          sky(c, win.x, win.y, win.w, street.shops - win.y, P.sky);
-          stars(c, starList, t, P.stars);
-          if (P.moon) K.moon(c, win.x + win.w - 50, win.y + 12, 7);
-          else if (C.sun) sunOrMoon(c, P, win.x + win.w * C.sun[0], win.y + win.h * C.sun[1], 10);
-          if (C.bird) flock(c, birds, t, dt, env.fx.birds, win.x, win.x + win.w, win.y + 4, win.y + 22, C.bird);
+          view.draw(c, t, dt, env);
           if (env.flash) { c.fillStyle = `rgba(200,210,255,${env.flash * 0.5})`; c.fillRect(win.x, win.y, win.w, win.h); }
-          drawStreet(c, t, dt, env, P, C);
+          drawStreet(c, t, dt, env, P, C, view.kind(env) === 'city');
           env.drawWind(c, win);
           env.drawRain(c, win, 0.8);
           // glass reflections + lettering
@@ -192,8 +189,8 @@
           // stools + people
           const stool = lk.furniture || '#7a4a30';
           const seat = (x, pants) => {
-            legs(f, x, 230, 19, { pants }); // shins down to the footrest, behind the stool's post
-            rrect(f, x - 20, 226, 40, 7, 3, stool); rect(f, x - 3, 233, 6, 37, '#2a2830'); rect(f, x - 15, 252, 30, 2, '#2a2830');
+            legs(f, x, 230, 29, { pants }); // shins down to the footrest, behind the stool's post
+            rrect(f, x - 20, 226, 40, 7, 3, stool); rect(f, x - 3, 233, 6, 37, '#2a2830'); rect(f, x - 15, 262, 30, 2, '#2a2830');
           };
           if (lk.friend) {
             seat(cx + 92, FRIEND.pants);

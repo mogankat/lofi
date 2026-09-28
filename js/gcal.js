@@ -17,19 +17,19 @@
   Gc.connected = () => L.Google.hasToken(SCOPE);
   Gc.onDay = (key) => (cfg.show ? events[key] || [] : []);
 
-  // Sign in (from a click), then send any focus sessions that were waiting.
-  Gc.connect = async () => {
-    try {
-      await L.Google.token(SCOPE);
-      cfg.linked = true; save();
-      Gc.error = null;
-      loaded.clear();
-      await flushQueue();
-      emit();
-    } catch (e) {
-      U.toast(e.message, 7000);
-    }
-  };
+  // Signed in with Calendar access (from here, or any other Google sign-in):
+  // load events and send any focus sessions that were waiting.
+  function linked() {
+    cfg.linked = true; save();
+    Gc.error = null;
+    loaded.clear();
+    flushQueue().finally(emit);
+  }
+  L.Google.onToken(() => { if (Gc.connected()) linked(); });
+  // Sign in (from a click). Drive is asked for in the same popup, so your
+  // journal, habits and to-dos sync too.
+  Gc.connect = () => L.Google.token(SCOPE, [L.Backup.SCOPE])
+    .then(() => { if (!cfg.linked) linked(); }, (e) => U.toast(e.message, 7000));
   Gc.disconnect = () => {
     L.Google.signOut();
     cfg.linked = false; save();
@@ -80,7 +80,11 @@
   async function insert(ev) {
     await L.Google.fetch(SCOPE, 'POST', API, { body: JSON.stringify(ev), headers: { 'Content-Type': 'application/json' } });
   }
-  async function flushQueue() {
+  let flushing = null; // one at a time, so a session is never sent twice
+  function flushQueue() {
+    return flushing || (flushing = flush().finally(() => { flushing = null; }));
+  }
+  async function flush() {
     const q = queue();
     if (!q.length || !Gc.connected()) return;
     const left = [];

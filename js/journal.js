@@ -1,5 +1,5 @@
 // Journal: dated entries with a title and free text, saved as you type.
-// Backups (download, Google Drive) live in backup.js.
+// Syncing between devices lives in sync.js, backups in backup.js.
 (function () {
   'use strict';
   const L = window.Lofi, U = L.util, { el } = U;
@@ -130,9 +130,9 @@
             } })),
           title, body,
           el('div', { class: 'j-meta hint' }))),
-      el('div', { class: 'j-backup' },
+      el('div', { class: 'j-backup' }, // sync status, filled in by app.js
         el('span', { class: 'hint j-sync' }),
-        el('button', { type: 'button', class: 'pill small', text: 'Save to Google Drive', onclick: () => L.Backup.saveToDrive() }),
+        el('button', { type: 'button', class: 'pill small j-sync-btn google-signin', text: 'Sign in with Google', onclick: () => L.Sync.start() }),
         el('button', { type: 'button', class: 'pill small ghost', text: 'Download', title: 'Download the journal as a Markdown file', onclick: () => L.Backup.downloadJournal() })),
     );
     renderList();
@@ -153,7 +153,6 @@
   J.onOpen = () => {
     renderList();
     if (!current) { const latest = sorted()[0]; if (latest) select(latest); else renderEditor(); }
-    if (L.Backup) L.Backup.renderStatus();
   };
 
   // Markdown export of every entry, newest first.

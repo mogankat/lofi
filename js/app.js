@@ -12,12 +12,18 @@
     x: '<svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>',
   };
 
-  const LOOK = { outfit: null, hair: null, gear: 'phones', accent: null, furniture: null, tent: null, pet: 'cat', petColor: null, friend: false };
+  const LOOK = { outfit: null, hair: null, gear: 'phones', accent: null, furniture: null, tent: null, pet: 'dog', petColor: null, friend: false, view: 'city' };
   const prefs = L.store.load('prefs', {
     scene: 'study', fps: 30, idleFade: true, autoMix: false, task: '', lighting: 'auto', timerPos: null, weekStart: 0,
     look: LOOK, soundVisuals: true, timerOpen: true, clock: { on: true, fmt: '12', seconds: false }, clockPos: null,
   });
   prefs.look = { ...LOOK, ...prefs.look };
+  prefs.look.view = prefs.look.view || 'city'; // there used to be an Auto setting (null)
+  if (!prefs.lookRev) { // the dog became the default pet: switch browsers still on the old default over once
+    if (prefs.look.pet === 'cat') prefs.look.pet = 'dog';
+    prefs.lookRev = 1;
+    L.store.save('prefs', prefs);
+  }
   delete prefs.look.birds; // birds now follow the bird sounds
   if (typeof prefs.look.gear === 'boolean') prefs.look.gear = prefs.look.gear ? 'phones' : 'none'; // was an on/off switch
   const savePrefs = () => L.store.save('prefs', prefs);
@@ -238,27 +244,31 @@
   }
 
   const thumbs = [];
+  const sceneName = (s) => (s.label ? s.label(prefs.look) : s.name); // e.g. the porch is a rooftop in the city
   function renderThumbs() {
     for (const th of thumbs) {
       const env = { tod: currentTod(), look: prefs.look, fx: NO_FX, flash: 0, drawRain() {}, drawWind() {} }, i = th.scene.create(480, 270);
       for (let k = 0; k < 20; k++) { th.c.save(); i.draw(th.c, 4 + k * 0.1, 0.1, env); th.c.restore(); } // warm up particles
+      th.label.textContent = sceneName(th.scene);
     }
   }
 
+  // Scenes in their groups (Home, Town, Exploration), under the setting that
+  // Home and Town share: the city, the countryside or the beach.
   function buildSceneGrid() {
     const grid = $('#sceneGrid');
-    for (const s of scenes.list) {
-      const b = document.createElement('button');
-      b.className = 'scene-card' + (s === scene ? ' active' : '');
-      b.dataset.scene = s.id;
-      const cv = document.createElement('canvas');
-      cv.width = 480; cv.height = 270;
-      thumbs.push({ scene: s, c: cv.getContext('2d') });
-      const label = document.createElement('span');
-      label.textContent = s.name;
-      b.append(cv, label);
-      b.addEventListener('click', () => setScene(s.id));
-      grid.append(b);
+    grid.append(U.el('div', { class: 'view-pick' }, U.el('span', { text: 'Home & Town setting' }),
+      U.el('div', { class: 'seg small', id: 'viewSeg', role: 'radiogroup', 'aria-label': 'Home and Town setting' },
+        ...L.sceneKit.VIEWS.map(([v, text]) => U.el('button', { type: 'button', role: 'radio', 'data-view': v, text, onclick: () => setLook('view', v) })))));
+    for (const [group, title] of scenes.GROUPS) {
+      const list = scenes.list.filter((s) => (s.group || 'explore') === group);
+      if (!list.length) continue;
+      grid.append(U.el('h4', { class: 'scene-group', text: title }));
+      for (const s of list) {
+        const cv = U.el('canvas', { width: 480, height: 270 }), label = U.el('span', { text: sceneName(s) });
+        thumbs.push({ scene: s, c: cv.getContext('2d'), label });
+        grid.append(U.el('button', { type: 'button', class: 'scene-card' + (s === scene ? ' active' : ''), 'data-scene': s.id, onclick: () => setScene(s.id) }, cv, label));
+      }
     }
     $$('#lightingSeg button').forEach((b) => b.addEventListener('click', () => setLighting(b.dataset.tod)));
     setLighting(prefs.lighting);
@@ -342,6 +352,7 @@
     $('.look-row[data-key="petColor"]').hidden = prefs.look.pet === 'none';
     $('#lookFriend').checked = prefs.look.friend;
     $$('#gearSeg button').forEach((b) => b.classList.toggle('active', b.dataset.gear === prefs.look.gear));
+    $$('#viewSeg button').forEach((b) => { const on = b.dataset.view === prefs.look.view; b.classList.toggle('active', on); b.setAttribute('aria-checked', on); });
     $('.look-row[data-key="accent"]').hidden = prefs.look.gear === 'none';
     $('#soundVisuals').checked = prefs.soundVisuals;
     // Little previews in each closed section's header.
@@ -670,7 +681,7 @@
     check('#setGcalLog', () => L.GCal.cfg.logFocus, (v) => L.GCal.setLogFocus(v));
     $('#gcalConnect').addEventListener('click', () => L.GCal.connect());
     check('#setDriveAuto', () => L.store.load('driveAuto', false), (v) => L.store.save('driveAuto', v));
-    $('#googleSignOut').addEventListener('click', () => { L.GCal.disconnect(); toast('Signed out of Google in this browser.'); });
+    $('#googleSignOut').addEventListener('click', () => { L.GCal.disconnect(); L.Sync.stop(); toast('Signed out of Google in this browser. Everything is still saved here.'); });
     const chime = $('#setChime');
     chime.value = Math.round(S.chime * 100);
     chime.addEventListener('change', () => Timer.updateSettings({ chime: chime.value / 100 }));
@@ -697,11 +708,9 @@
 
     // sync across devices
     $('#setSync').addEventListener('change', (e) => L.Sync.setOn(e.target.checked));
-    $('#syncNow').addEventListener('click', () => L.Sync.sync({ interactive: true }));
-    $('#syncBtn').addEventListener('click', () => L.Sync.sync({ interactive: true }));
+    ['#googleSignIn', '#syncNow', '#syncBtn'].forEach((id) => $(id).addEventListener('click', () => L.Sync.start()));
     L.Sync.onChange = renderSync;
     setInterval(renderSync, 30000); // keep "Synced 3 min ago" current
-    renderSync();
 
     const locate = () => Weather.locate().catch((e) => { toast(e.message, 6000); $('#setCity').focus(); });
     $('#setWeather').addEventListener('change', (e) => {
@@ -723,13 +732,19 @@
     });
   }
 
+  // Settings, the dock's ☁ and the journal's footer.
   function renderSync() {
-    const S = L.Sync, btn = $('#syncBtn'), text = S.statusText();
-    btn.hidden = !S.isOn();
+    const S = L.Sync, on = S.isOn(), text = S.statusText(), btn = $('#syncBtn');
+    const signedIn = on && L.Google.hasToken(L.Backup.SCOPE);
+    btn.hidden = !on;
     btn.dataset.state = S.state;
     btn.title = `Sync: ${text}`;
-    $('#setSync').checked = S.isOn();
-    $('.sync-status').textContent = S.isOn() ? text : '';
+    $('#setSync').checked = on;
+    $('.sync-status').textContent = on ? text : '';
+    $('#googleSignIn').hidden = signedIn;
+    $('#syncNow').hidden = !signedIn;
+    $$('.j-sync').forEach((e) => { e.textContent = on ? text : 'Sign in to keep your journal on all your devices'; });
+    $$('.j-sync-btn').forEach((b) => { b.textContent = signedIn ? 'Sync now' : 'Sign in with Google'; b.disabled = S.state === 'syncing'; });
   }
 
   // ======================= Panels, zen, idle, keys =======================
@@ -846,6 +861,7 @@
   L.Clocks.init($('#clocksBody'));
   L.Journal.init($('#journalBody'));
   L.Calendar.init($('#calendarBody'));
+  renderSync();
   L.Google.preload();
   renderBadges();
   renderMusic();

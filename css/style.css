@@ -30,7 +30,7 @@ svg.fill { fill: currentColor; stroke: none; }
 }
 
 #ui { position: fixed; inset: 0; pointer-events: none; }
-#ui > * { pointer-events: auto; }
+#ui > :not(.toast) { pointer-events: auto; } /* the toast is display-only: even faded out, it sits over the panels */
 
 .card {
   background: var(--glass);
@@ -261,6 +261,8 @@ select option { background: #1f1b33; }
 
 /* scenes */
 .scene-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.scene-group { grid-column: 1 / -1; margin: 8px 0 -4px; }
+.view-pick { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 10px; font-size: 12.5px; font-weight: 700; color: var(--muted); }
 .scene-card { display: flex; flex-direction: column; gap: 6px; text-align: left; font-size: 13px; font-weight: 700; color: var(--muted); }
 .scene-card canvas { width: 100%; aspect-ratio: 16 / 9; border-radius: 10px; image-rendering: pixelated; border: 2px solid transparent; transition: border-color .15s, transform .15s; }
 .scene-card:hover canvas { transform: translateY(-2px); }

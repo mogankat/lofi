@@ -11,9 +11,10 @@
 //     added on either device is lost; deletions are remembered (util.forget)
 //     so a deleted item doesn't come back from the other copy.
 //
-// Google's browser sign-in lasts an hour and can't renew in the background, so
-// the first click on the page signs in again (a quick popup that usually
-// closes by itself), and the dock's cloud button can always sync on demand.
+// Signing in to Google turns it on. Google's browser sign-in lasts an hour and
+// can't renew in the background, so after opening the page, or once the hour
+// is up, the next click signs in again (a quick popup that usually closes by
+// itself), and the dock's cloud button can always sync on demand.
 (function () {
   'use strict';
   const L = window.Lofi, U = L.util, P = L.store.PREFIX;
@@ -23,8 +24,10 @@
   const KEYS = ['deletedIds', 'journal', 'habits', 'habitLog', 'todos', 'todoArchive', 'focusLog', 'stats'];
 
   // 'drive…' keys are left out of backups: they describe this device's link to Drive.
+  // on: syncing. off: you turned it off (so signing in doesn't turn it back on).
   // dirty[key]: set when changed on this device since the last sync. rev[key]: the Drive version last matched.
-  const meta = L.store.load('driveSyncMeta', { on: false, dirty: {}, rev: {}, last: 0 });
+  // file: the Drive file those versions belong to.
+  const meta = L.store.load('driveSyncMeta', { on: false, off: false, dirty: {}, rev: {}, last: 0, file: null });
   const saveMeta = () => L.store.save('driveSyncMeta', meta);
   const S = { state: meta.on ? 'signin' : 'off', error: null, onChange: null };
   const setState = (state, error = null) => { S.state = state; S.error = error; if (S.onChange) S.onChange(); };
@@ -83,25 +86,28 @@
   });
 
   // ---------- Drive ----------
+  // The saved file is checked once per visit: it may have been deleted in Drive
+  // (a trashed file still reads and writes fine, but other devices can't find it).
+  let checked = false;
   async function fileId() {
     const saved = L.store.load(FILE.key, null);
-    if (saved) return saved;
-    const q = encodeURIComponent(`name='${FILE.name}' and trashed=false`);
-    const found = await L.Backup.api('GET', `https://www.googleapis.com/drive/v3/files?q=${q}&orderBy=modifiedTime desc&fields=files(id)`);
-    const id = found.files.length ? found.files[0].id : null;
-    if (id) L.store.save(FILE.key, id);
+    if (saved && (checked || await L.Backup.alive(saved))) { checked = true; return saved; }
+    const id = await L.Backup.find(FILE.name); // made by another device, or none yet
+    L.store.save(FILE.key, id);
+    checked = !!id;
     return id;
   }
   async function readRemote(retry = true) {
     const id = await fileId();
-    if (!id) return { app: 'lofi-focus-sync', version: 1, keys: {} };
+    if (!id) return { id, doc: { app: 'lofi-focus-sync', version: 1, keys: {} } };
     try {
       const doc = JSON.parse(await L.Backup.api('GET', `https://www.googleapis.com/drive/v3/files/${id}?alt=media`, { raw: true }));
       doc.keys = doc.keys || {};
-      return doc;
+      return { id, doc };
     } catch (e) {
       if (e.status !== 404 || !retry) throw e;
-      L.store.save(FILE.key, null); // the file was deleted: look again / start fresh
+      L.store.save(FILE.key, null); // deleted for good: look again / start fresh
+      checked = false;
       return readRemote(false);
     }
   }
@@ -122,7 +128,11 @@
         await L.Google.token(SCOPE); // must be requested straight from the click
       }
       setState('syncing');
-      const doc = await readRemote(), R = doc.keys;
+      const { id, doc } = await readRemote(), R = doc.keys;
+      if (meta.file !== id) { // first sync, or the Drive file was replaced: merge everything that's here
+        meta.rev = {};
+        for (const k of KEYS) if (readLocal(k) !== undefined) meta.dirty[k] = ++stamp + Date.now();
+      }
       const dead = MERGE.deletedIds(readLocal('deletedIds'), R.deletedIds && R.deletedIds.value);
       const pulled = [];
       let push = false;
@@ -148,6 +158,7 @@
         doc.updated = Date.now();
         await L.Backup.upsert(FILE, JSON.stringify(doc), L.Backup.folderId);
       }
+      meta.file = push ? L.store.load(FILE.key, null) : id;
       // Clear "changed here" only if nothing new was edited while we synced.
       for (const [k, mark] of Object.entries(done)) if (meta.dirty[k] === mark) delete meta.dirty[k];
       meta.last = Date.now();
@@ -173,15 +184,16 @@
   }
 
   S.isOn = () => meta.on;
-  S.setOn = (on) => {
-    meta.on = on;
-    if (on) { // the first sync merges what's already here with what's in Drive
-      for (const k of KEYS) if (readLocal(k) !== undefined && !meta.rev[k]) meta.dirty[k] = ++stamp + Date.now();
-    }
-    saveMeta();
-    setState(on ? 'signin' : 'off');
-    return on ? S.sync({ interactive: true }) : Promise.resolve();
+  const enable = () => { meta.on = true; meta.off = false; saveMeta(); };
+  // Sign in if needed, and sync now ("Sign in with Google", "Sync now", ☁). Call from a click.
+  S.start = () => { enable(); return S.sync({ interactive: true }); };
+  S.setOn = (on) => { // the checkbox
+    if (on) return S.start();
+    meta.on = false; meta.off = true; saveMeta();
+    setState('off');
+    return Promise.resolve();
   };
+  S.stop = () => { meta.on = false; saveMeta(); armed = false; setState('off'); }; // signing out of Google
   S.statusText = () => {
     if (S.state === 'off') return 'Off';
     if (S.state === 'syncing') return 'Syncing…';
@@ -191,16 +203,29 @@
     return `Synced ${mins < 1 ? 'just now' : mins < 60 ? `${mins} min ago` : new Date(meta.last).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}`;
   };
 
-  // Stay current: after signing in (for any reason), when the tab comes back
+  // Signing in to Google (from anywhere: sync, Calendar, backups) turns sync
+  // on, unless you turned it off. Then stay current: when the tab comes back
   // into view, and every minute while it's open.
-  L.Google.onToken(() => { if (meta.on && L.Google.hasToken(SCOPE)) S.sync(); });
+  let armed = true; // may sign in again on the next click
+  L.Google.onToken(() => {
+    armed = true;
+    if (!L.Google.hasToken(SCOPE)) return;
+    if (!meta.on && !meta.off) {
+      enable();
+      U.toast('Sync is on: your journal, habits and to-dos now stay the same on every device where you sign in to Google.', 7000);
+    }
+    if (meta.on) S.sync();
+  });
   document.addEventListener('visibilitychange', () => { if (!document.hidden && meta.on && L.Google.hasToken(SCOPE)) S.sync(); });
   setInterval(() => { if (meta.on && !document.hidden && L.Google.hasToken(SCOPE)) S.sync(); }, 60000);
-  // The first click on the page signs in again (a click, not pointerdown, so
-  // phones allow the popup too).
+  // When the page opens, or the hour-long sign-in runs out, the next click
+  // signs in again (a click, not pointerdown, so phones allow the popup too).
+  // Once per sign-in, so closing the popup doesn't bring it back.
   addEventListener('click', (e) => {
-    if (meta.on && !L.Google.hasToken(SCOPE) && !e.target.closest('#syncBtn, #setSync, #syncNow')) S.sync({ interactive: true });
-  }, { once: true, capture: true });
+    if (!armed || !meta.on || L.Google.hasToken(SCOPE) || e.target.closest('#syncBtn, #setSync, #syncNow, .google-signin')) return;
+    armed = false;
+    S.sync({ interactive: true });
+  }, true);
 
   L.Sync = S;
 })();

@@ -96,7 +96,7 @@
         el('button', { type: 'button', class: 'link', text: 'Refresh', onclick: () => G.refresh(month) })]
       : [el('span', { class: 'gcal-dot' }),
         el('span', { text: pending ? `${pending} focus session(s) waiting to be logged` : G.cfg.linked ? 'Google Calendar — sign in again to load events' : 'See your Google Calendar here' }),
-        el('button', { type: 'button', class: 'pill small', text: 'Connect', onclick: () => G.connect() })]));
+        el('button', { type: 'button', class: 'pill small google-signin', text: 'Connect', onclick: () => G.connect() })]));
   }
 
   Cal.init = (container) => {

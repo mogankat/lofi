@@ -1,7 +1,10 @@
 // Shared toolkit for the animated scenes, plus the scene registry.
 //
 // Each scene lives in its own file in js/scenes/ and calls Lofi.scenes.register({
-//   id, name, outdoor, mix, create(W, H) -> { draw(c, t, dt, env) } })
+//   id, name, group, outdoor, mix, create(W, H) -> { draw(c, t, dt, env) } })
+//   group   – 'home' | 'town' | 'explore' (see GROUPS); Home and Town scenes
+//             show the city, countryside or beach picked in the Scenes panel (views.js)
+//   label   – optional (look) -> name, for a scene whose name follows the view
 //   outdoor – the app draws rain and wind over the whole frame; indoor scenes
 //             draw them only through their windows (env.drawRain / env.drawWind)
 //   mix     – suggested ambient sound volumes for the scene
@@ -206,7 +209,7 @@
 
   // ---------- customisation (env.look) ----------
   // Colours are optional overrides; null means "use the scene's own colour".
-  const DEFAULT_LOOK = { outfit: null, hair: null, gear: 'phones', accent: null, furniture: null, tent: null, pet: 'cat', petColor: null, friend: false };
+  const DEFAULT_LOOK = { outfit: null, hair: null, gear: 'phones', accent: null, furniture: null, tent: null, pet: 'dog', petColor: null, friend: false, view: 'city' };
   const lookOf = (env) => ({ ...DEFAULT_LOOK, ...(env.look || {}) });
   // What's on everyone's head: 'phones' | 'hat' | 'none' (older saves stored true/false).
   const gearKind = (lk) => (lk.gear === false || lk.gear === 'none' ? 'none' : lk.gear === 'hat' ? 'hat' : 'phones');
@@ -273,10 +276,13 @@
 
   // Seated person seen from behind (they're looking at the same view we are).
   // x = centre, y = shoulder line.
+  // arms: false when the scene draws them itself (reaching for something).
   function backFigure(c, x, y, o) {
     const hy = y - 17 + (o.bob || 0), torso = o.torso || 70;
-    rrect(c, x - 33, y + 4 + (o.armL || 0), 12, 30, 6, o.shade);
-    rrect(c, x + 21, y + 4 + (o.armR || 0), 12, 30, 6, o.shade);
+    if (o.arms !== false) {
+      rrect(c, x - 33, y + 4 + (o.armL || 0), 12, 30, 6, o.shade);
+      rrect(c, x + 21, y + 4 + (o.armR || 0), 12, 30, 6, o.shade);
+    }
     const g = c.createLinearGradient(x - 25, 0, x + 25, 0);
     g.addColorStop(0, o.top); g.addColorStop(1, o.shade);
     rrect(c, x - 25, y - 2, 50, torso, 12, g);
@@ -313,14 +319,36 @@
     }
   }
 
+  // Someone standing with their back to us: backFigure on top of a pair of legs.
+  // y = shoulder line, floor = where their feet are. o: backFigure's options plus pants, shoe, apron.
+  function standing(c, x, y, floor, o) {
+    const torso = o.torso || 62, hip = y + torso - 16, pants = o.pants || '#3a3a55', shoe = o.shoe || '#241c1c';
+    for (const dx of [-8, 8]) { rrect(c, x + dx - 7, hip, 13, floor - hip - 2, 4, pants); rrect(c, x + dx - 8, floor - 4, 15, 5, 2, shoe); }
+    rrect(c, x - 19, hip - 4, 38, 16, 7, pants);
+    backFigure(c, x, y, { ...o, torso });
+    if (o.apron) { // apron strings tied in a bow at the back
+      const ay = y + torso - 22;
+      rect(c, x - 25, ay, 50, 3, o.apron);
+      poly(c, [x, ay + 1, x - 7, ay - 3, x - 7, ay + 5], o.apron); poly(c, [x, ay + 1, x + 7, ay - 3, x + 7, ay + 5], o.apron);
+      line(c, [x - 1, ay + 3, x - 4, ay + 13], o.apron, 2); line(c, [x + 1, ay + 3, x + 5, ay + 12], o.apron, 2);
+      circle(c, x, ay + 1, 2, shade(o.apron, -0.15));
+    }
+  }
+  // A sleeve from the shoulder, through the elbow, to a hand.
+  function arm(c, pts, sleeve, skin = '#c99a7c') {
+    line(c, pts, sleeve, 8);
+    circle(c, pts[pts.length - 2], pts[pts.length - 1], 3.2, skin);
+  }
+
   // Lower legs hanging down below a seat (bench, pier), seen from behind.
+  // len = from the seat to the shoes; about 20–30 looks right next to a backFigure.
   function legs(c, x, top, len, o = {}) {
     const pants = o.pants || '#3a3a55', shoe = o.shoe || '#241c1c';
-    [[-7, 0], [7, 1.7]].forEach(([dx, ph]) => {
+    [[-8, 0], [8, 1.7]].forEach(([dx, ph]) => {
       const kick = o.swing ? sin(o.t * 1.3 + ph) * o.swing : 0;
-      rect(c, x + dx - 3, top, 6, len * 0.6, pants);
-      rect(c, x + dx - 3 + kick * 0.5, top + len * 0.6 - 1, 6, len * 0.4 + 1, pants);
-      rrect(c, x + dx - 4 + kick, top + len, 8, 3, 1.5, shoe);
+      rrect(c, x + dx - 5, top, 10, len * 0.6, 3, pants);
+      rrect(c, x + dx - 5 + kick * 0.5, top + len * 0.5, 10, len * 0.5 + 1, 3, pants);
+      rrect(c, x + dx - 6 + kick, top + len, 12, 4, 2, shoe);
     });
   }
 
@@ -360,11 +388,13 @@
     return 'night';
   }
 
+  // Scenes are grouped in the Scenes panel (in this order); a scene's `group` is one of these ids.
+  const GROUPS = [['home', 'Home'], ['town', 'Town'], ['explore', 'Exploration']];
   const list = [], byId = {};
-  window.Lofi.scenes = { list, byId, TOD, autoPhase, register(s) { list.push(s); byId[s.id] = s; } };
+  window.Lofi.scenes = { list, byId, TOD, GROUPS, autoPhase, register(s) { list.push(s); byId[s.id] = s; } };
   window.Lofi.sceneKit = {
     TAU, PI, PHASES, rng, rect, circle, ellipse, rrect, poly, line, vgrad, glow, pool, vignette, ridge, shade,
     sky, makeStars, stars, moon, sunOrMoon, makeClouds, clouds, makeFlies, fireflies, fliesLevel, makeFlock, flock,
-    makeLayer, lookOf, headwear, friendWear, outfit, FRIEND, drawPet, perchBird, owl, backFigure, legs, flames, steam,
+    makeLayer, lookOf, headwear, friendWear, outfit, FRIEND, drawPet, perchBird, owl, backFigure, standing, arm, legs, flames, steam,
   };
 })();

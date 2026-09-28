@@ -28,8 +28,17 @@ No accounts, no paywall, no tracking, no build step. It's just static files.
 - **Calendar**: a month view of focus sessions, habit check-ins, finished tasks and journal
   entries. Click a day for details, with links straight to that day's journal entries.
   Optionally shows your **Google Calendar** events, and can log finished focus sessions to it.
-- **Animated scenes**: study desk, café window, fireside, park bench, campfire guitar and
-  fishing dock. Each has **Morning, Afternoon, Evening and Night** lighting, or **Auto** to
+- **Animated scenes** in three groups:
+  - **Home**: study desk, kitchen (cooking while a friend chops vegetables), fireside, and the
+    porch, which is a rooftop in the city.
+  - **Town**: café window, bookstore, greenhouse and park bench.
+  - **Exploration**: campfire guitar and fishing dock.
+
+  Home and Town share one **setting**, picked at the top of the Scenes panel: **City**
+  (the default), **Countryside** or **Beach**. It's what you see out of every window, across
+  the café's street, through the greenhouse glass and beyond the park.
+
+  Each has **Morning, Afternoon, Evening and Night** lighting, or **Auto** to
   follow your clock. On a phone held upright you still see the whole scene: the wall or sky
   above and the floor below are extended to fill the screen, instead of the sides being cut off.
 - **Sounds you can see** (optional): rain falls on screen or on the window, thunder flashes,
@@ -164,9 +173,11 @@ Browsers only allow sound after your first click; the app starts audio on that c
 
 ### What gets saved where
 
-**Sync across devices** (Settings → Google → Sync across devices, turned on on each device)
-keeps your journal, habits and check-offs, to-do lists and focus history the same everywhere,
-through `lofi-focus-sync.json` in the `Lofi Focus` Drive folder:
+**Sync across devices** turns on when you sign in to Google on a device (Settings → Google →
+Sign in with Google, the journal's sign-in button, or connecting Google Calendar, which asks for
+Drive in the same popup). Untick *Sync across devices* to keep that device out of it. It keeps
+your journal, habits and check-offs, to-do lists and focus history the same everywhere, through
+`lofi-focus-sync.json` in the `Lofi Focus` Drive folder:
 - It pulls when the page opens or you switch back to it, pushes a few seconds after a change,
   and checks every minute.
 - If both devices changed something before syncing, they're merged item by item, keeping the
@@ -174,9 +185,11 @@ through `lofi-focus-sync.json` in the `Lofi Focus` Drive folder:
   so deleted items don't come back.
 - Layout, scene, volumes, stations and running timers stay per device.
 - Google's browser sign-in lasts an hour and can't renew in the background (that needs a
-  server). So after opening the page, your first click signs you in again with a quick popup,
-  which usually closes by itself. The ☁ button in the dock shows the status (a teal dot means
-  synced, an orange dot means it needs a click) and syncs on demand.
+  server). So after opening the page, or once the hour is up, your next click signs you in
+  again with a quick popup, which usually closes by itself. The ☁ button in the dock shows the
+  status (a teal dot means synced, an orange dot means it needs a click) and syncs on demand.
+- Deleting the `Lofi Focus` folder in Drive is fine: the next sync makes a new one from what's
+  on your devices, and every device moves over to it.
 
 **Save to Drive** creates a `Lofi Focus` folder containing:
 - `lofi-focus-backup.json`: everything, used by **Restore from Drive** on another computer.
@@ -226,8 +239,9 @@ It's plain static files. Any static host will do:
 | --- | --- |
 | Default stations | `DEFAULT_STATIONS` in `js/music.js` |
 | Sound recipes | `BUILD` in `js/ambient.js` |
-| Scenes | One file per scene in `js/scenes/`, registered with `Lofi.scenes.register()`. Each is a `create(W, H)` that returns a `draw(ctx, t, dt, env)` function, drawn on a 270px-tall canvas. Load order (which is also the menu order) is set in `index.html` |
-| Shared scene parts | `js/scenes/kit.js`: lighting `PHASES`, figures, pets, birds, flames, and `autoPhase()` (Auto's hours) |
+| Scenes | One file per scene in `js/scenes/`, registered with `Lofi.scenes.register()`. Each is a `create(W, H)` that returns a `draw(ctx, t, dt, env)` function, drawn on a 270px-tall canvas. Each has a `group` (`home`, `town` or `explore`, shown in that order); load order in `index.html` sets the order within a group and for the N key |
+| Shared scene parts | `js/scenes/kit.js`: lighting `PHASES`, figures (sitting and standing), pets, birds, flames, scene `GROUPS`, and `autoPhase()` (Auto's hours) |
+| The Home & Town setting (city, countryside, beach) | `js/scenes/views.js`: `K.viewer(area, options)` draws it in a scene |
 | Sound effects in scenes | `soundFx()`, `drawRain()` and `drawWind()` in `js/app.js`, plus `env.fx` in each scene |
 | Presets | `PRESETS` in `js/app.js` |
 | Productivity panels | `js/todos.js`, `js/habits.js`, `js/clocks.js`, `js/journal.js`, `js/calendar.js` |

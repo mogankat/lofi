@@ -45,7 +45,7 @@
   }
 
   window.Lofi.scenes.register({
-    id: 'seaside', name: 'Fishing dock', outdoor: true,
+    id: 'seaside', name: 'Fishing dock', group: 'explore', outdoor: true,
     mix: { waves: 0.55, wind: 0.15 },
     create(W, H) {
       const r = rng(41), cx = round(W / 2), hz = 165, lx = cx + 175, dockEnd = cx + 42, layer = makeLayer();
@@ -124,24 +124,25 @@
           const lnx = cx - 16;
           rect(f, lnx - 3, 208, 6, 8, '#2e2230'); rect(f, lnx - 2, 210, 4, 5, P.lights > 0.3 ? '#ffd88a' : '#d8d2c0');
           const rim = P.moon ? 'rgba(200,210,255,0.5)' : P.rim;
-          // legs dangle over the edge, swinging a little
-          legs(f, cx + 14, 223, 13, { t, swing: 2 });
+          // legs dangle over the edge, swinging a little; rods point out to sea, so the
+          // lines drop into the water beyond the dock (between it and the horizon)
+          legs(f, cx + 14, 223, 29, { t, swing: 2 });
           if (lk.friend) {
-            legs(f, cx - 52, 223, 12, { t: t + 2, swing: 1.5, pants: FRIEND.pants });
-            backFigure(f, cx - 52, 191, { t, torso: 25, top: '#c98a6a', shade: '#a86f52', hair: FRIEND.hair, longHair: true, ...friendWear(lk), wind, rim, bob: sin(t * 0.8 + 2) * 0.5 });
-            later.push(fishing(f, cx - 68, 210, cx - 118, 152 + sin(t * 0.8 + 1) * 1.5, cx - 140, 244 + sin(t * 1.4 + 1) * 0.8, t + 3));
+            legs(f, cx - 52, 223, 28, { t: t + 2, swing: 1.5, pants: FRIEND.pants });
+            backFigure(f, cx - 52, 177, { t, torso: 40, top: '#c98a6a', shade: '#a86f52', hair: FRIEND.hair, longHair: true, ...friendWear(lk), wind, rim, bob: sin(t * 0.8 + 2) * 0.5 });
+            later.push(fishing(f, cx - 70, 208, cx - 104, 126 + sin(t * 0.8 + 1) * 1.5, cx - 126, 190 + sin(t * 1.4 + 1) * 0.6, t + 3));
           }
           drawPet(f, lk, lk.friend ? cx - 100 : cx - 44, 216, t);
-          backFigure(f, cx + 14, 190, {
-            t, torso: 26, top: fit.top, shade: fit.shade, hair: lk.hair || '#4a2e28', ...headwear(lk, '#3a3548'), wind,
+          backFigure(f, cx + 14, 176, {
+            t, torso: 41, top: fit.top, shade: fit.shade, hair: lk.hair || '#4a2e28', ...headwear(lk, '#3a3548'), wind,
             rim, bob: sin(t * 0.9) * 0.5,
           });
-          later.push(fishing(f, cx + 30, 210, cx + 80, 150 + sin(t * 0.9) * 1.5, cx + 104, 246 + sin(t * 1.6) * 0.8, t));
+          later.push(fishing(f, cx + 32, 208, cx + 66, 124 + sin(t * 0.9) * 1.5, cx + 90, 194 + sin(t * 1.6) * 0.6, t));
           if (env.fx.birds && !P.moon) perchBird(f, dockEnd - 4, 216, t, 3, '#e4e4ec', true);
+          later.forEach((fn) => fn(c)); // lines and floats are further away than the people: under the layer
           layer.end(c, P.tint);
           if (env.fx.birds && P.moon) owl(c, dockEnd - 4, 216, t);
           glow(c, lnx, 212, 26, [255, 200, 120], 0.4 * (0.92 + 0.08 * sin(t * 7)) * P.lights);
-          later.forEach((fn) => fn(c));
           vignette(c, W, H, P.vig * 0.7);
         },
       };
