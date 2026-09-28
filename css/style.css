@@ -69,6 +69,19 @@ svg.fill { fill: currentColor; stroke: none; }
   background: var(--glass-3); opacity: 0; transition: opacity .2s;
 }
 .timer:hover .grip, .timer.dragging .grip { opacity: 1; }
+.timer-close {
+  position: absolute; top: -9px; right: -9px; width: 24px; height: 24px; border-radius: 50%;
+  display: grid; place-items: center; color: var(--muted);
+  background: rgba(30, 26, 50, 0.95); border: 1px solid var(--line); box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  opacity: 0; transition: opacity .2s, color .15s;
+}
+.timer-close svg { width: 13px; height: 13px; stroke-width: 2.5; }
+.timer:hover .timer-close, .timer-close:focus-visible { opacity: 1; }
+.timer-close:hover { color: var(--text); }
+@media (hover: none) { .timer-close { opacity: .85; } }
+body.timer-closed .timer { display: none; }
+.dock-btn.on { color: var(--text); }
+.time-badge { top: 2px; right: -4px; font-variant-numeric: tabular-nums; }
 .modes { display: flex; gap: 4px; background: var(--glass-2); border-radius: 12px; padding: 4px; }
 .modes button { flex: 1; padding: 6px 2px; border-radius: 9px; font-size: 13px; font-weight: 700; color: var(--muted); transition: background .15s, color .15s; }
 .modes button:hover { color: var(--text); }
@@ -230,12 +243,12 @@ select option { background: #1f1b33; }
 .presets button { padding: 6px 11px; border-radius: 999px; background: var(--glass-2); font-size: 12.5px; font-weight: 700; border: 1px solid var(--line); }
 .presets button:hover { background: var(--glass-3); }
 .sound-list { display: flex; flex-direction: column; gap: 2px; }
-.sound-row { display: grid; grid-template-columns: 26px 110px 1fr; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 10px; }
+.sound-row { display: grid; grid-template-columns: 26px 110px 1fr; align-items: center; gap: 8px; padding: 4px 8px; border-radius: 10px; }
 .sound-row .s-icon { font-size: 17px; text-align: center; filter: grayscale(1) opacity(.6); transition: filter .2s; }
 .sound-row .s-name { font-size: 14px; font-weight: 600; color: var(--muted); transition: color .2s; }
 .sound-row.on .s-icon { filter: none; }
 .sound-row.on .s-name { color: var(--text); }
-.sound-row.master { margin-top: 8px; border-top: 1px solid var(--line); border-radius: 0; padding-top: 12px; }
+.sound-row.master { margin-bottom: 6px; border-bottom: 1px solid var(--line); border-radius: 0; padding-bottom: 10px; }
 .sound-row.master .s-icon { filter: none; }
 
 /* scenes */
@@ -473,6 +486,7 @@ input.plain, .h-name, .todo-text, .cd-label, .list-title, .j-title-in {
 .swatch-custom.active { border-style: solid; border-color: #fff; }
 .drive-setup summary { cursor: pointer; font-size: 13px; color: var(--muted); margin: 6px 0; }
 .drive-setup input { width: 100%; }
+.guide-link { display: inline-block; margin: 2px 0 10px; text-decoration: none; }
 
 @media (max-width: 720px) {
   #journalBody, #calendarBody { grid-template-columns: 1fr; }
@@ -504,7 +518,8 @@ body.zen .timer {
   padding: 10px 26px; background: rgba(20, 17, 36, 0.3); cursor: default;
 }
 body.zen .timer > :not(.time-row) { display: none; }
-body.zen .adj { display: none; }
+body.zen:not(.timer-running) .timer { display: none; }
+body.zen .adj, body.zen .timer-close { display: none; }
 body.zen .time-row { margin: 0; }
 body.zen .time { font-size: 44px; }
 body.zen .weather { font-size: 13px; margin-top: 2px; }
