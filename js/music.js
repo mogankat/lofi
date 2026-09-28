@@ -4,20 +4,40 @@
   'use strict';
   const L = window.Lofi;
 
-  // Lofi Girl's two main streams sometimes refuse embedding on some sites;
-  // the others below embed reliably, so they come first.
+  // All of these play in an embedded player. (Lofi Girl's two main streams,
+  // "beats to relax/study to" and "beats to sleep/chill to", refuse embedding,
+  // so they aren't included.)
   const DEFAULT_STATIONS = [
     { name: 'Chillhop Radio · jazzy & lofi beats', type: 'youtube', video: '5yx6BWlEVcY' },
+    { name: 'Lofi Girl · sad lofi for rainy days', type: 'youtube', video: 'CwPCy1GLS38' },
+    { name: 'Lofi Girl · asian lofi radio', type: 'youtube', video: '1Tl2FtV06qo' },
     { name: 'Lofi Girl · synthwave radio', type: 'youtube', video: '4xDzrJKXOOY' },
-    { name: 'Lofi Girl · beats to relax/study to', type: 'youtube', video: 'jfKfPfyJRdk' },
-    { name: 'Lofi Girl · beats to sleep/chill to', type: 'youtube', video: '28KRPhVzCus' },
+    { name: 'Lofi Girl · dark ambient radio', type: 'youtube', video: 'S_MOd40zlYU' },
+    { name: 'Lofi Girl · deep sleep ambient', type: 'youtube', video: 'nI725iVsyoQ' },
     { name: 'SomaFM Fluid · instrumental hip-hop', type: 'stream', url: 'https://ice6.somafm.com/fluid-128-mp3' },
     { name: 'SomaFM Groove Salad · downtempo', type: 'stream', url: 'https://ice6.somafm.com/groovesalad-128-mp3' },
     { name: 'SomaFM Drone Zone · ambient', type: 'stream', url: 'https://ice6.somafm.com/dronezone-128-mp3' },
   ];
 
+  // Seasonal stations only appear during their months (1 = January), at the top
+  // of the list. They aren't saved with your own list, so they come back each
+  // year; removing one hides it until "Restore default stations".
+  const SEASONAL = [
+    { name: '🎄 Lofi Girl · Christmas lofi radio', type: 'youtube', video: 'XSXEaikz0Bc', months: [12] },
+    { name: '🎃 Lofi Girl · Halloween lofi radio', type: 'youtube', video: '3GQY80jyysQ', months: [10] },
+    { name: '🍂 Chill Village · autumn lofi for deep focus', type: 'youtube', video: 'Vc5S0hAAujc', months: [9, 10, 11] },
+  ];
+  const SEASONAL_IDS = new Set(SEASONAL.map((s) => s.video));
+  const isSeasonal = (st) => SEASONAL_IDS.has(st.video) && !st.custom; // a pasted link is yours to keep
+  const inSeason = (st, month = new Date().getMonth() + 1) => st.months.includes(month);
+  function withSeason(own) {
+    const hidden = new Set(L.store.load('hiddenSeasonal', []));
+    const extra = SEASONAL.filter((s) => inSeason(s) && !hidden.has(s.video)).map((s) => ({ ...s }));
+    return [...extra, ...own.filter((s) => !isSeasonal(s))];
+  }
+
   const M = {
-    stations: L.store.load('stations', DEFAULT_STATIONS),
+    stations: withSeason(L.store.load('stations', DEFAULT_STATIONS)),
     index: L.store.load('stationIndex', 0),
     volume: L.store.load('musicVolume', 60),
     playing: false,
@@ -32,7 +52,7 @@
   const emit = () => M.onChange && M.onChange();
   const fail = (msg) => { M.playing = false; M.loading = false; emit(); if (M.onError) M.onError(msg); };
   const keyOf = (st) => st.list || st.video;
-  const saveStations = () => L.store.save('stations', M.stations);
+  const saveStations = () => L.store.save('stations', M.stations.filter((s) => !isSeasonal(s)));
 
   M.current = () => M.stations[M.index];
   M.activeType = () => active;
@@ -192,7 +212,7 @@
   M.add = function (input, name) {
     const src = M.parse(input);
     if (!src) return -1;
-    const st = { ...src, name: name || (src.type === 'stream' ? new URL(src.url).hostname : src.list ? 'YouTube playlist' : 'YouTube video') };
+    const st = { ...src, custom: true, name: name || (src.type === 'stream' ? new URL(src.url).hostname : src.list ? 'YouTube playlist' : 'YouTube video') };
     if (!name && src.type === 'youtube') st.autoName = true;
     M.stations.push(st);
     saveStations();
@@ -202,6 +222,7 @@
 
   M.remove = function (i) {
     if (i === M.index) M.pause();
+    if (isSeasonal(M.stations[i])) L.store.save('hiddenSeasonal', [...L.store.load('hiddenSeasonal', []), M.stations[i].video]);
     M.stations.splice(i, 1);
     if (i < M.index) M.index--;
     M.index = Math.max(0, Math.min(M.index, M.stations.length - 1));
@@ -212,7 +233,8 @@
 
   M.restoreDefaults = function () {
     M.pause();
-    M.stations = JSON.parse(JSON.stringify(DEFAULT_STATIONS));
+    L.store.save('hiddenSeasonal', []);
+    M.stations = withSeason(JSON.parse(JSON.stringify(DEFAULT_STATIONS)));
     M.index = 0;
     L.store.save('stationIndex', 0);
     saveStations();

@@ -625,8 +625,6 @@
       if (document.activeElement !== input) input.value = Math.round(v * 100);
       row.classList.toggle('on', v > 0);
     });
-    const n = Ambient.activeCount();
-    $('#soundBadge').textContent = n ? n : '';
   }
   Ambient.onChange = renderSounds;
 
@@ -776,6 +774,11 @@
   }
   ['mousemove', 'pointerdown', 'keydown', 'wheel', 'touchstart'].forEach((ev) => addEventListener(ev, poke, { passive: true }));
 
+  // Number keys follow the dock order; a few panels also get a memorable letter.
+  const PANEL_KEYS = {
+    1: 'music', 2: 'sounds', 3: 'scenes', 4: 'look', 5: 'todos', 6: 'habits', 7: 'clocks', 8: 'journal', 9: 'calendar', 0: 'settings',
+    a: 'sounds', d: 'todos', h: 'habits', w: 'clocks', j: 'journal', ',': 'settings',
+  };
   document.addEventListener('keydown', (e) => {
     if (e.target.matches('input:not([type="range"]):not([type="checkbox"]):not([type="radio"]):not([type="color"]), textarea, select')) {
       if (e.key === 'Escape') e.target.blur();
@@ -786,9 +789,18 @@
     const k = e.key.toLowerCase();
     if (k === ' ') { e.preventDefault(); Timer.toggle(); }
     else if (k === 't') setTimerOpen(!prefs.timerOpen);
+    else if (k === 'c') { // show / hide the clock (and keep the Settings checkbox in step)
+      prefs.clock.on = !prefs.clock.on;
+      savePrefs(); renderClock(); applyTimerPos(); renderWeather(); renderClockSettings();
+      $('#setClock').checked = prefs.clock.on;
+    }
     else if (k === 'r') Timer.reset();
     else if (k === 's') Timer.skip();
     else if (k === 'm') Music.toggle();
+    else if (PANEL_KEYS[k]) { // open or close a panel (leaving zen mode if needed)
+      if (document.body.classList.contains('zen')) toggleZen(false);
+      togglePanel(PANEL_KEYS[k]);
+    }
     else if (k === 'n') nextScene();
     else if (k === 'l') cycleLighting();
     else if ((k === 'arrowup' || k === 'arrowdown') && !e.target.matches('input')) { e.preventDefault(); Timer.adjust((k === 'arrowup' ? 1 : -1) * (e.shiftKey ? 5 : 1)); }
