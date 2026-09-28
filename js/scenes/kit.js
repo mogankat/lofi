@@ -206,10 +206,20 @@
 
   // ---------- customisation (env.look) ----------
   // Colours are optional overrides; null means "use the scene's own colour".
-  const DEFAULT_LOOK = { outfit: null, hair: null, gear: true, accent: null, furniture: null, tent: null, pet: 'cat', petColor: null, friend: false };
+  const DEFAULT_LOOK = { outfit: null, hair: null, gear: 'phones', accent: null, furniture: null, tent: null, pet: 'cat', petColor: null, friend: false };
   const lookOf = (env) => ({ ...DEFAULT_LOOK, ...(env.look || {}) });
-  // Headphones (or the campfire beanie): null when switched off.
-  const gear = (lk, def) => (lk.gear === false ? null : lk.accent || def);
+  // What's on everyone's head: 'phones' | 'hat' | 'none' (older saves stored true/false).
+  const gearKind = (lk) => (lk.gear === false || lk.gear === 'none' ? 'none' : lk.gear === 'hat' ? 'hat' : 'phones');
+  // { phones, hat } colours for backFigure/guitarist. noPhones: a scene where headphones look odd.
+  function headwear(lk, phonesCol, hatCol = '#c9574a', noPhones = false) {
+    const kind = gearKind(lk);
+    return {
+      phones: kind === 'phones' && !noPhones ? lk.accent || phonesCol : null,
+      hat: kind === 'hat' ? lk.accent || hatCol : null,
+    };
+  }
+  // The friend wears the same kind of thing, in their own colours.
+  const friendWear = (lk, noPhones) => headwear({ gear: lk.gear }, '#f0b44a', '#e0a040', noPhones);
   const outfit = (lk, def) => ({ top: lk.outfit || def, shade: shade(lk.outfit || def, -0.25) });
   const PET_COLOR = { cat: '#3b3450', dog: '#b07a4a' };
   const FRIEND = { top: '#6f8fb8', shade: '#56729a', hair: '#231c24', skin: '#c98f68', pants: '#35354a' };
@@ -277,9 +287,16 @@
       rrect(c, x - 15, hy, 30, 26, 8, o.hair);
       for (let i = 0; i < 5; i++) rect(c, x - 14 + i * 6 + sin(o.t * 2 + i) * (1.2 + (o.wind || 0) * 2), hy + 24, 4, 3 + (i % 2), o.hair);
     }
-    if (o.rim) {
-      c.strokeStyle = o.rim; c.lineWidth = 1.5;
-      c.beginPath(); c.arc(x, hy, 14.3, PI * 1.12, PI * 1.88); c.stroke();
+    if (o.rim) { // backlight catching the sides of the head (not across the top, which read as a headband)
+      c.strokeStyle = o.rim; c.lineWidth = 1.2;
+      c.beginPath(); c.arc(x, hy, 14.4, PI * 0.95, PI * 1.25); c.stroke();
+      c.beginPath(); c.arc(x, hy, 14.4, PI * 1.75, PI * 2.05); c.stroke();
+    }
+    if (o.hat) { // beanie seen from behind
+      c.fillStyle = o.hat;
+      c.beginPath(); c.arc(x, hy - 1, 16, PI, 0); c.fill();
+      rrect(c, x - 16.5, hy - 4, 33, 5, 2, shade(o.hat, -0.18));
+      circle(c, x, hy - 17, 3.2, shade(o.hat, 0.55));
     }
     if (o.phones) {
       c.strokeStyle = o.phones; c.lineWidth = 3;
@@ -341,6 +358,6 @@
   window.Lofi.sceneKit = {
     TAU, PI, PHASES, rng, rect, circle, ellipse, rrect, poly, line, vgrad, glow, pool, vignette, ridge, shade,
     sky, makeStars, stars, moon, sunOrMoon, makeClouds, clouds, makeFlies, fireflies, fliesLevel, makeFlock, flock,
-    makeLayer, lookOf, gear, outfit, FRIEND, drawPet, perchBird, owl, backFigure, legs, flames, steam,
+    makeLayer, lookOf, headwear, friendWear, outfit, FRIEND, drawPet, perchBird, owl, backFigure, legs, flames, steam,
   };
 })();

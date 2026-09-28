@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Privacy · Lofi Focus</title>
+  <meta name="description" content="How Lofi Focus handles your data.">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🍅</text></svg>">
+  <style>
+    :root { --bg: #16142a; --card: #211d3a; --text: #f3eee8; --muted: rgba(243, 238, 232, 0.68); --accent: #ffb38a; --line: rgba(255, 255, 255, 0.1); color-scheme: dark; }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--text); font: 16px/1.65 'Nunito', ui-rounded, system-ui, -apple-system, 'Segoe UI', sans-serif; }
+    main { max-width: 720px; margin: 0 auto; padding: 48px 20px 80px; }
+    h1 { font-size: 30px; margin: 0 0 4px; }
+    h2 { font-size: 19px; margin: 36px 0 8px; }
+    p, li { color: var(--muted); }
+    strong { color: var(--text); }
+    a { color: var(--accent); }
+    ul { padding-left: 20px; }
+    code { background: var(--card); padding: 1px 6px; border-radius: 6px; font-size: 14px; color: var(--text); }
+    .card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 16px 20px; margin: 20px 0; }
+    .back { display: inline-block; margin-bottom: 28px; text-decoration: none; font-weight: 700; }
+  </style>
+</head>
+<body>
+  <main>
+    <a class="back" href="./">← Back to Lofi Focus</a>
+    <h1>Privacy</h1>
+    <p>Lofi Focus is a pomodoro timer with music, ambient sounds and a journal. It runs entirely in your web browser.</p>
+
+    <div class="card">
+      <p><strong>In short:</strong> there are no accounts, no analytics, no ads, and no server of ours that receives your data.
+        Everything you create stays in your browser unless <em>you</em> choose to save it to your own Google Drive or Calendar.</p>
+    </div>
+
+    <h2>What's stored, and where</h2>
+    <p>Your journal, to-do lists, habits, countdowns, focus history, music stations, sound mix and settings are saved in your
+      browser's local storage on this device. They never leave it unless you download a backup or use the Google features below.
+      Clearing this site's data in your browser deletes them.</p>
+
+    <h2>Google Drive and Google Calendar (optional)</h2>
+    <p>These only run when you click <strong>Save to Drive</strong>, <strong>Restore from Drive</strong> or <strong>Connect</strong>. Google asks for your permission in its own window.</p>
+    <ul>
+      <li><strong>Google Drive</strong> (<code>drive.file</code>): the app creates a <em>Lofi Focus</em> folder in your Drive and saves your backup and
+        readable copies of your journal, to-dos and habits there. This permission only lets it see files it created itself, never the rest of your Drive.</li>
+      <li><strong>Google Calendar</strong> (<code>calendar.events</code>): the app reads events from your primary calendar for the month you're viewing,
+        so it can show them in its calendar. If you turn on <em>Add finished focus sessions to Google Calendar</em>, it adds a “🍅 Focus” event when a session ends.
+        Events are held in memory while the page is open and are not stored.</li>
+      <li>Sign-in gives this page a temporary access token (about an hour). It's kept in memory only, never saved, and never sent anywhere except Google.</li>
+      <li>Data received from Google is used only to show it to you and to save your own data back to your own account. It's never shared, sold,
+        used for advertising, or sent to anyone else. This app's use of information received from Google APIs follows the
+        <a href="https://developers.google.com/terms/api-services-user-data-policy" rel="noopener">Google API Services User Data Policy</a>, including the Limited Use requirements.</li>
+      <li>You can remove the app's access at any time at <a href="https://myaccount.google.com/permissions" rel="noopener">myaccount.google.com/permissions</a>.</li>
+    </ul>
+
+    <h2>Other services the page talks to</h2>
+    <p>Some features load things from other sites. Those sites see your IP address, as with any web request:</p>
+    <ul>
+      <li><strong>YouTube</strong>: when you play a YouTube station, the official YouTube player loads, and YouTube's own
+        <a href="https://policies.google.com/privacy" rel="noopener">privacy policy</a> and cookies apply.</li>
+      <li><strong>Radio streams</strong> (such as SomaFM): when you play a radio station, audio is streamed from that station.</li>
+      <li><strong>Open-Meteo</strong>: if you turn on the temperature, the page sends Open-Meteo either your approximate location
+        (rounded to about 1 km) or the city name you type, to get the current weather.</li>
+      <li><strong>Google Fonts</strong>: the page's font is loaded from Google Fonts.</li>
+    </ul>
+    <p>Ambient sounds and the animated scenes are generated in your browser and need nothing from the network.</p>
+
+    <h2>Children</h2>
+    <p>Lofi Focus isn't directed at children and doesn't knowingly collect anything from anyone. It doesn't collect data at all.</p>
+
+    <h2>Changes and contact</h2>
+    <p>If this page changes, the updated version will be posted here. This copy of Lofi Focus is run by the owner of this website.
+      Questions can go to them. The app's source code is open, so you can check exactly what it does.</p>
+  </main>
+</body>
+</html>

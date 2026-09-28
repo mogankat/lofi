@@ -12,13 +12,14 @@
     x: '<svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>',
   };
 
-  const LOOK = { outfit: null, hair: null, gear: true, accent: null, furniture: null, tent: null, pet: 'cat', petColor: null, friend: false };
+  const LOOK = { outfit: null, hair: null, gear: 'phones', accent: null, furniture: null, tent: null, pet: 'cat', petColor: null, friend: false };
   const prefs = L.store.load('prefs', {
     scene: 'study', fps: 30, idleFade: true, autoMix: false, task: '', lighting: 'auto', timerPos: null, weekStart: 0,
     look: LOOK, soundVisuals: true, clock: { on: true, fmt: '12', seconds: false }, clockPos: null,
   });
   prefs.look = { ...LOOK, ...prefs.look };
   delete prefs.look.birds; // birds now follow the bird sounds
+  if (typeof prefs.look.gear === 'boolean') prefs.look.gear = prefs.look.gear ? 'phones' : 'none'; // was an on/off switch
   const savePrefs = () => L.store.save('prefs', prefs);
   const toast = U.toast;
 
@@ -305,8 +306,10 @@
   function buildLook() {
     $('#lookControls').append(
       section('character', 'Character', true, colorRow('outfit', 'Outfit'), colorRow('hair', 'Hair'),
-        U.el('label', { class: 'check' }, U.el('input', { type: 'checkbox', id: 'lookGear', onchange: (e) => setLook('gear', e.target.checked) }), 'Headphones & hat'),
-        colorRow('accent', 'Headphones & hat colour')),
+        U.el('div', { class: 'look-row' }, U.el('span', { class: 'look-label', text: 'On your head' }),
+          U.el('div', { class: 'seg small', id: 'gearSeg' }, ...[['phones', 'Headphones'], ['hat', 'Hat'], ['none', 'None']].map(([v, text]) =>
+            U.el('button', { type: 'button', 'data-gear': v, text, onclick: () => setLook('gear', v) })))),
+        colorRow('accent', 'Headphones / hat colour')),
       section('pet', 'Pet', false,
         U.el('div', { class: 'seg small', id: 'petSeg' }, ...[['none', 'None'], ['cat', 'Cat'], ['dog', 'Dog']].map(([v, text]) =>
           U.el('button', { type: 'button', 'data-pet': v, text, onclick: () => setLook('pet', v) }))),
@@ -338,13 +341,13 @@
     $$('#petSeg button').forEach((b) => b.classList.toggle('active', b.dataset.pet === prefs.look.pet));
     $('.look-row[data-key="petColor"]').hidden = prefs.look.pet === 'none';
     $('#lookFriend').checked = prefs.look.friend;
-    $('#lookGear').checked = prefs.look.gear !== false;
-    $('.look-row[data-key="accent"]').hidden = prefs.look.gear === false;
+    $$('#gearSeg button').forEach((b) => b.classList.toggle('active', b.dataset.gear === prefs.look.gear));
+    $('.look-row[data-key="accent"]').hidden = prefs.look.gear === 'none';
     $('#soundVisuals').checked = prefs.soundVisuals;
     // Little previews in each closed section's header.
     const dot = (c) => U.el('i', { class: 'peek-dot' + (c ? '' : ' auto'), style: c ? `--c:${c}` : null });
     const peek = (id, ...kids) => $(`[data-acc="${id}"] .acc-peek`).replaceChildren(...kids);
-    peek('character', dot(prefs.look.outfit), dot(prefs.look.hair), prefs.look.gear === false ? '' : dot(prefs.look.accent));
+    peek('character', dot(prefs.look.outfit), dot(prefs.look.hair), prefs.look.gear === 'none' ? '' : dot(prefs.look.accent));
     peek('pet', prefs.look.pet === 'none' ? 'None' : prefs.look.pet === 'cat' ? 'Cat' : 'Dog');
     peek('things', dot(prefs.look.furniture), dot(prefs.look.tent));
     peek('company', prefs.look.friend ? 'Friend' : 'Just you');
@@ -456,7 +459,7 @@
       if (e.button !== 0 || !canDrag() || e.target.closest('button, input, select, a')) return;
       const r = el.getBoundingClientRect();
       drag = { dx: e.clientX - r.left, dy: e.clientY - r.top, id: e.pointerId };
-      el.setPointerCapture(e.pointerId);
+      try { el.setPointerCapture(e.pointerId); } catch (err) { /* pointer already gone */ }
       el.classList.add('dragging');
     });
     el.addEventListener('pointermove', (e) => {

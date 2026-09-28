@@ -35,9 +35,9 @@ No accounts, no paywall, no tracking, no build step. It's just static files.
 - **Sounds you can see** (optional): rain falls on screen or on the window, thunder flashes,
   wind blows leaves and sways trees and curtains, bird sounds bring out birds (owls at night),
   and crickets bring fireflies after dark.
-- **Customize** (palette button): outfit and hair colours; headphones/hat on or off, and their
-  colour; furniture and tent colours; a cat or dog; and a friend who joins you in every scene
-  except the study desk.
+- **Customize** (palette button): outfit and hair colours; headphones, a hat or neither, and its
+  colour (your friend wears the same kind, in their own colours); furniture and tent colours;
+  a cat or dog; and a friend who joins you in every scene except the study desk.
 - **Clock** with 12- or 24-hour time, which you can move anywhere on screen. It can also show
   the **local temperature** in °F, °C or both, from [Open-Meteo](https://open-meteo.com), which
   is free and needs no API key. You can use your browser location or type a city.
@@ -51,25 +51,98 @@ Google Drive.
 
 ## Google setup (Drive and Calendar)
 
-Because this is a static page with no server, Google features need an OAuth Client ID from your
-own (free) Google Cloud project. It's a one-time setup:
+This is a static page with no server, so the Google features need an **OAuth Client ID** from
+your own (free) Google Cloud project. It's a one-time setup, but Google's console has quite a
+few steps. The screens below are from the 2026 **Google Auth Platform** layout: *Branding*,
+*Audience*, *Data Access* and *Clients*. Older guides call the same things "OAuth consent
+screen" and "Credentials".
 
-1. Go to <https://console.cloud.google.com/>, create a project, and enable the
-   **Google Drive API** and the **Google Calendar API**.
-2. **APIs & Services → OAuth consent screen**: choose *External*, fill in the app name and your
-   email, and add yourself under **Test users**. Leave the app in *Testing*. It only works for
-   the test users you list, and Google shows an "unverified app" notice you can click through.
-   That's expected for a personal tool, and there's no review needed.
-3. **APIs & Services → Credentials → Create credentials → OAuth client ID** → *Web application*.
-   Under **Authorized JavaScript origins**, add every address you'll open the page from, such as
-   `http://localhost:8080` and `https://yourname.github.io`.
-4. Copy the Client ID (`…apps.googleusercontent.com`) into `js/config.js` so it applies to
-   everyone using your copy, or paste it into **Settings → Google → Google setup** for this
-   browser only.
+You don't need a client secret. Never put one in this page, because everything here is public.
 
-Sign-in happens in a Google popup and gives the page an access token that lasts about an hour.
-Nothing secret is stored. After an hour, the next Drive save or **Connect** in the Calendar
-signs in again, usually with one click.
+### 1. Create the project and turn on the APIs
+
+1. Open <https://console.cloud.google.com/> and create a project (for example "Lofi Focus").
+2. **APIs & Services → Library**: enable the **Google Drive API** and the **Google Calendar API**.
+
+### 2. Google Auth Platform → Branding
+
+Fill this in completely and click **Save** at the very bottom. Publishing fails with "you must
+complete your configuration on the Branding page" if anything is missing.
+
+| Field | What to enter |
+| --- | --- |
+| App name | Anything without "Google" in it, e.g. `Lofi Focus` |
+| User support email | Pick your address from the dropdown |
+| App logo | **Leave empty.** Uploading a logo means Google has to review the app before it can be published. |
+| Application home page | Your site, e.g. `https://lofi.example.com` |
+| Application privacy policy link | `https://lofi.example.com/privacy.html`. This page ships with the app, see `privacy.html` |
+| Application terms of service link | Leave empty |
+| Authorized domains | Your registrable domain without `https://`, e.g. `example.com` or `yourname.github.io`. Press Enter so it turns into a chip. |
+| Developer contact information | Your email address |
+
+### 3. Google Auth Platform → Audience
+
+- **User type: External.** If your project belongs to a Google Workspace or school
+  organisation, choose External anyway. With *Internal*, personal `@gmail.com` accounts are
+  rejected and show "Ineligible accounts not added".
+- Then choose who can sign in:
+  - **Just you (and a few people): stay in *Testing*** and add each person's Google address
+    under **Test users**, typed in lowercase. There's a limit of 100.
+  - **Friends, without adding each address: click *Publish app*.** Anyone with a Google account
+    can then sign in. Because Calendar's scope is "sensitive" and the app isn't verified by
+    Google, people see a **"Google hasn't verified this app"** screen. They click **Advanced →
+    Go to *your site* (unsafe)** to continue, and an unverified app is limited to 100 users.
+    Removing that warning requires Google's formal verification (domain proof, a privacy
+    policy, a demo video), which isn't worth it for a personal tool.
+
+### 4. Google Auth Platform → Data Access
+
+Click **Add or remove scopes** and add exactly these two, which are all the app ever asks for:
+
+- `https://www.googleapis.com/auth/drive.file`: only files this app creates (non-sensitive).
+- `https://www.googleapis.com/auth/calendar.events`: read and add events on your calendars
+  (sensitive, which is why the warning above appears).
+
+### 5. Google Auth Platform → Clients
+
+1. **Create client → Web application**, and give it any name.
+2. Under **Authorized JavaScript origins**, add every address you open the page from, **exactly**
+   as your browser shows it. To be sure, run `location.origin` in the browser's console.
+   - Include `http://` or `https://`, and the port if there is one: `http://localhost:8080`.
+   - No trailing slash, no path, no wildcards.
+   - `http://localhost:8080` and `http://127.0.0.1:8080` are *different* origins.
+   - If you use a custom domain (GitHub Pages `CNAME`), add that domain, e.g.
+     `https://lofi.example.com`, as well as or instead of `https://yourname.github.io`.
+3. Leave **Authorized redirect URIs** empty. The app uses Google's popup sign-in.
+4. **Create**, then copy the **Client ID** (`123…-abc….apps.googleusercontent.com`).
+   - Put it in `js/config.js` (`googleClientId: '…'`) so it works for everyone using your copy, or
+   - paste it into **Settings → Google → Google setup** for just this browser.
+
+Changes in the console can take **up to 5 minutes** to take effect.
+
+### How sign-in works
+
+Signing in opens a Google popup and gives the page an access token that lasts about an hour.
+It's kept in memory only, never saved. After an hour, the next Drive save or **Connect** in
+the Calendar asks again, usually with one click. You can remove the app's access any time at
+<https://myaccount.google.com/permissions>.
+
+### Troubleshooting
+
+| What you see | Cause and fix |
+| --- | --- |
+| `Error 401: invalid_client`, "no registered origin" | The page's exact address isn't in **Authorized JavaScript origins** (check http vs https, the port, a trailing slash, localhost vs 127.0.0.1). Or the Client ID was pasted wrong: no quotes or spaces, and it has to be the Client ID, not the secret. |
+| `Error 403: access_denied`, "has not completed the Google verification process" | The app is in *Testing* and this Google account isn't a **Test user**. Add it, or publish the app (step 3). |
+| "Google hasn't verified this app" | Expected for a personal app. Click **Advanced → Go to … (unsafe)**. |
+| "Ineligible accounts not added" when adding a test user | The audience is *Internal* (switch to External), the address has a typo or a trailing space, or it's a group, alias or child account. |
+| Nothing happens when clicking Save or Connect | The popup was blocked (allow popups for the site), or an ad blocker (uBlock, AdGuard, Privacy Badger, Brave Shields) is blocking `accounts.google.com`. In the console this shows as `net::ERR_BLOCKED_BY_CLIENT`. Allow the site in the blocker, or try a private window. |
+| "you must complete your configuration on the Branding page" | A required Branding field is empty (often the privacy policy link), a logo is uploaded, or the page wasn't saved at the bottom. |
+
+Console messages you can ignore: blocked `doubleclick.net` / `googleads` requests (ads inside the
+YouTube player, blocked by an ad blocker), and "The AudioContext was not allowed to start".
+Browsers only allow sound after your first click; the app starts audio on that click.
+
+### What gets saved where
 
 **Save to Drive** creates a `Lofi Focus` folder containing:
 - `lofi-focus-backup.json`: everything, used by **Restore from Drive** on another computer.
@@ -126,4 +199,5 @@ It's plain static files. Any static host will do:
 | Productivity panels | `js/todos.js`, `js/habits.js`, `js/clocks.js`, `js/journal.js`, `js/calendar.js` |
 | Google sign-in, Drive, Calendar | `js/google.js`, `js/backup.js`, `js/gcal.js` (Client ID default in `js/config.js`) |
 | Customization | `DEFAULT_LOOK`, `drawPet`, `perchBird` and `owl` in `js/scenes/kit.js`, swatches in `js/app.js` |
+| Privacy policy (linked from Google's consent screen) | `privacy.html` |
 | Colours and layout | `css/style.css` |

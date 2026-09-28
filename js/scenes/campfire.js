@@ -2,7 +2,7 @@
 (function () {
   'use strict';
   const K = window.Lofi.sceneKit;
-  const { TAU, PI, PHASES, rng, rect, circle, ellipse, rrect, poly, line, vgrad, glow, pool, vignette, ridge, shade, sky, stars, sunOrMoon, makeClouds, clouds, makeFlies, fireflies, fliesLevel, makeFlock, flock, makeLayer, lookOf, gear, FRIEND, drawPet, perchBird, owl, flames } = K;
+  const { TAU, PI, PHASES, rng, rect, circle, ellipse, rrect, poly, line, vgrad, glow, pool, vignette, ridge, shade, sky, stars, sunOrMoon, makeClouds, clouds, makeFlies, fireflies, fliesLevel, makeFlock, flock, makeLayer, lookOf, headwear, friendWear, FRIEND, drawPet, perchBird, owl, flames } = K;
   const { sin, cos, abs, min, round, random } = Math;
 
   const CAMP = {
@@ -35,6 +35,12 @@
       c.fillStyle = o.hat; c.beginPath(); c.arc(hx, hy - 4, 12, PI, 0); c.fill();
       rect(c, hx - 12.5, hy - 6, 25, 4, shade(o.hat, -0.18));
       circle(c, hx, hy - 16, 3, '#e8d9c8');
+    }
+    if (o.phones) {
+      c.strokeStyle = o.phones; c.lineWidth = 2.5;
+      c.beginPath(); c.arc(hx, hy - 1, 13.5, PI * 1.02, PI * 1.98); c.stroke();
+      rrect(c, hx - 17, hy - 3, 6, 11, 2, o.phones);
+      rrect(c, hx + 11, hy - 3, 6, 11, 2, o.phones);
     }
     rect(c, hx - 6, hy + 2, 3, 1, hair); rect(c, hx + 3, hy + 2, 3, 1, hair); // eyes closed, enjoying it
     c.globalAlpha = 0.5; rect(c, hx - 8, hy + 4, 3, 2, '#f08a7a'); rect(c, hx + 5, hy + 4, 3, 2, '#f08a7a'); c.globalAlpha = 1;
@@ -120,11 +126,11 @@
           for (const a of [0.28, -0.28]) { f.save(); f.translate(fx, fy - 2); f.rotate(a); rect(f, -18, -2.5, 36, 5, '#4d2e1d'); f.restore(); }
           rect(f, gx - 26, 222, 52, 9, '#5a3a26');
           ellipse(f, gx + 26, 226.5, 3, 4.5, '#7a5236');
-          guitarist(f, gx, 222, t, { skin: '#f1c7a3', sweater: lk.outfit || '#6f8fb8', hair: lk.hair || '#3a2420', hat: gear(lk, '#c9574a') });
+          guitarist(f, gx, 222, t, { skin: '#f1c7a3', sweater: lk.outfit || '#6f8fb8', hair: lk.hair || '#3a2420', ...headwear(lk, '#e8e0d0') });
           if (lk.friend) { // on a stump, jamming along
             const sx = cx - 68;
             rect(f, sx - 12, 222, 24, 10, '#6a4a30'); ellipse(f, sx, 222, 12, 3, '#8a6848');
-            guitarist(f, sx, 222, t, { skin: FRIEND.skin, sweater: '#8a6aa8', hair: FRIEND.hair, hat: null, ph: 1.9, guitar: '#9a5a36' });
+            guitarist(f, sx, 222, t, { skin: FRIEND.skin, sweater: '#8a6aa8', hair: FRIEND.hair, ...friendWear(lk), ph: 1.9, guitar: '#9a5a36' });
           }
           drawPet(f, lk, gx + 40, 238, t);
           if (env.fx.birds && !P.moon) perchBird(f, tx, 172, t, 1);

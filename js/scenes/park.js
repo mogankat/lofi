@@ -2,7 +2,7 @@
 (function () {
   'use strict';
   const K = window.Lofi.sceneKit;
-  const { TAU, PHASES, rng, rect, circle, line, vgrad, glow, pool, vignette, ridge, sky, makeStars, stars, sunOrMoon, makeClouds, clouds, makeFlies, fireflies, fliesLevel, makeFlock, flock, makeLayer, lookOf, gear, outfit, FRIEND, drawPet, perchBird, owl, backFigure, legs } = K;
+  const { TAU, PHASES, rng, rect, circle, line, vgrad, glow, pool, vignette, ridge, sky, makeStars, stars, sunOrMoon, makeClouds, clouds, makeFlies, fireflies, fliesLevel, makeFlock, flock, makeLayer, lookOf, headwear, friendWear, outfit, FRIEND, drawPet, perchBird, owl, backFigure, legs } = K;
   const { sin, cos, abs, round, random } = Math;
 
   const LEAF = ['#e07a3f', '#e3a33b', '#c4543a', '#f0c05a'];
@@ -83,10 +83,10 @@
           if (lk.friend) legs(f, bx + 24, 216, 11, { pants: FRIEND.pants });
           rect(f, bx - 46, 213, 92, 4, K.shade(pal, 0));
           rect(f, bx - 42, 217, 3, 13, '#2f2b3b'); rect(f, bx + 39, 217, 3, 13, '#2f2b3b');
-          if (lk.friend) backFigure(f, bx + 24, 186, { t, torso: 30, top: FRIEND.top, shade: FRIEND.shade, hair: FRIEND.hair, rim: P.rim, bob: sin(t * 1.1 + 2) * 0.6 });
+          if (lk.friend) backFigure(f, bx + 24, 186, { t, torso: 30, top: FRIEND.top, shade: FRIEND.shade, hair: FRIEND.hair, ...friendWear(lk), rim: P.rim, bob: sin(t * 1.1 + 2) * 0.6 });
           backFigure(f, me, 184, {
             t, torso: 32, top: fit.top, shade: fit.shade, hair: lk.hair || '#4a2c2a', longHair: true, wind,
-            phones: gear(lk, '#3a3548'), rim: P.rim, bob: sin(t * 1.3) * 0.6,
+            ...headwear(lk, '#3a3548'), rim: P.rim, bob: sin(t * 1.3) * 0.6,
           });
           const slat = K.shade(pal, 0.08), slatDark = K.shade(pal, -0.2);
           rect(f, bx - 48, 192, 96, 5, slat); rect(f, bx - 48, 196, 96, 1, slatDark);
