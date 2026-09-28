@@ -1,0 +1,263 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Google Setup · Lofi Focus</title>
+  <meta name="description" content="Step-by-step: connect Lofi Focus to Google Drive and Google Calendar.">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🍅</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap">
+  <style>
+    :root {
+      --bg: #15132a; --card: #201c38; --card-2: #2a2546; --text: #f4efe9; --muted: rgba(244, 239, 233, 0.66);
+      --line: rgba(255, 255, 255, 0.09); --accent: #ffb38a; --accent-ink: #2b1a13; --good: #93d6c4; --warn: #ffd27a;
+      color-scheme: dark;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body { margin: 0; background: radial-gradient(1200px 600px at 80% -10%, #2c2450 0%, transparent 60%), var(--bg); color: var(--text); font: 16px/1.65 'Nunito', ui-rounded, system-ui, -apple-system, 'Segoe UI', sans-serif; }
+    main { max-width: 780px; margin: 0 auto; padding: 40px 20px 96px; }
+    a { color: var(--accent); }
+    .back { display: inline-flex; gap: 6px; text-decoration: none; font-weight: 800; margin-bottom: 26px; }
+    header h1 { font-size: 34px; line-height: 1.15; margin: 0 0 10px; }
+    header p { color: var(--muted); margin: 0; font-size: 17px; }
+    .badges { display: flex; flex-wrap: wrap; gap: 8px; margin: 16px 0 0; }
+    .badge { font-size: 13px; font-weight: 700; padding: 4px 10px; border-radius: 999px; background: var(--card-2); color: var(--muted); border: 1px solid var(--line); }
+    nav.toc { margin: 30px 0 10px; display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 8px; }
+    nav.toc a { display: flex; gap: 10px; align-items: center; padding: 10px 14px; border-radius: 12px; background: var(--card); border: 1px solid var(--line); text-decoration: none; color: var(--text); font-weight: 700; font-size: 14.5px; }
+    nav.toc a:hover { border-color: rgba(255, 179, 138, 0.5); }
+    nav.toc b { display: grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; background: var(--accent); color: var(--accent-ink); font-size: 12.5px; flex: none; }
+    section.step { position: relative; margin: 26px 0; padding: 22px 24px 20px; background: var(--card); border: 1px solid var(--line); border-radius: 18px; scroll-margin-top: 20px; }
+    .num { position: absolute; top: -14px; left: 20px; display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; background: var(--accent); color: var(--accent-ink); font-weight: 800; box-shadow: 0 4px 14px rgba(0, 0, 0, .3); }
+    section.step h2 { margin: 4px 0 4px; font-size: 21px; }
+    .where { color: var(--muted); font-size: 14px; font-weight: 700; margin: 0 0 12px; }
+    .where span { color: var(--text); }
+    p, li { color: var(--muted); }
+    li { margin: 4px 0; }
+    strong { color: var(--text); }
+    code { background: rgba(0, 0, 0, 0.3); border: 1px solid var(--line); padding: 1px 6px; border-radius: 6px; font-size: 13.5px; color: var(--text); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; overflow-wrap: break-word; }
+    table { width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 14.5px; }
+    th, td { text-align: left; vertical-align: top; padding: 9px 10px; border-bottom: 1px solid var(--line); }
+    th { color: var(--text); font-weight: 800; width: 34%; }
+    td { color: var(--muted); }
+    .callout { display: flex; gap: 12px; margin: 14px 0 4px; padding: 12px 14px; border-radius: 12px; font-size: 14.5px; }
+    .callout p { margin: 0; color: var(--text); }
+    .callout.tip { background: rgba(147, 214, 196, 0.1); border: 1px solid rgba(147, 214, 196, 0.3); }
+    .callout.warn { background: rgba(255, 210, 122, 0.08); border: 1px solid rgba(255, 210, 122, 0.3); }
+    .choice { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 12px 0; }
+    .choice > div { padding: 14px 16px; border-radius: 14px; background: var(--card-2); border: 1px solid var(--line); }
+    .choice h3 { margin: 0 0 6px; font-size: 16px; }
+    .choice p { margin: 0; font-size: 14.5px; }
+    .tool { display: flex; gap: 8px; align-items: center; margin: 12px 0; padding: 10px; border-radius: 12px; background: rgba(0, 0, 0, 0.25); border: 1px dashed rgba(255, 179, 138, 0.45); }
+    .tool code { flex: 1; font-size: 15px; background: none; border: 0; padding: 4px 6px; }
+    .tool input { flex: 1; min-width: 0; background: transparent; border: 0; color: var(--text); font: 14.5px ui-monospace, SFMono-Regular, Menlo, monospace; outline: none; padding: 6px; }
+    button { font: inherit; font-weight: 800; font-size: 14px; border: 0; border-radius: 10px; padding: 8px 14px; background: var(--accent); color: var(--accent-ink); cursor: pointer; flex: none; }
+    button.ghost { background: var(--card-2); color: var(--text); border: 1px solid var(--line); }
+    .status { font-size: 14px; font-weight: 700; margin: 4px 2px 0; min-height: 1.4em; }
+    .status.ok { color: var(--good); }
+    .status.bad { color: var(--warn); }
+    details.trouble { margin: 10px 0; border-radius: 12px; background: var(--card-2); border: 1px solid var(--line); }
+    details.trouble summary { cursor: pointer; padding: 12px 16px; font-weight: 800; list-style: none; display: flex; gap: 10px; align-items: baseline; }
+    details.trouble summary::-webkit-details-marker { display: none; }
+    details.trouble summary::before { content: '+'; color: var(--accent); font-weight: 800; width: 12px; }
+    details.trouble[open] summary::before { content: '−'; }
+    details.trouble summary code { font-weight: 600; }
+    details.trouble div { padding: 0 16px 12px 38px; }
+    details.trouble p { margin: 4px 0; font-size: 14.5px; }
+    footer { margin-top: 40px; color: var(--muted); font-size: 14px; text-align: center; }
+    @media (max-width: 600px) {
+      header h1 { font-size: 27px; }
+      .choice { grid-template-columns: 1fr; }
+      section.step { padding: 20px 16px 16px; }
+      th { width: 40%; }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <a class="back" href="./">← Back to Lofi Focus</a>
+
+    <header>
+      <h1>Connect Google Drive &amp; Calendar</h1>
+      <p>Lofi Focus is a page with no server behind it, so Google needs to know about <em>your</em> copy before it can sign you in.
+        You do this once, in a free Google Cloud project. It takes about 10–15 minutes.</p>
+      <div class="badges">
+        <span class="badge">Free</span><span class="badge">One-time setup</span><span class="badge">No client secret needed</span><span class="badge">Only Drive files the app creates</span>
+      </div>
+    </header>
+
+    <nav class="toc" aria-label="Steps">
+      <a href="#project"><b>1</b>Create the project</a>
+      <a href="#branding"><b>2</b>Branding</a>
+      <a href="#audience"><b>3</b>Audience</a>
+      <a href="#scopes"><b>4</b>Data Access</a>
+      <a href="#client"><b>5</b>Create the client</a>
+      <a href="#paste"><b>6</b>Paste your Client ID</a>
+      <a href="#trouble"><b>?</b>Troubleshooting</a>
+    </nav>
+
+    <section class="step" id="project">
+      <div class="num">1</div>
+      <h2>Create a project and turn on the APIs</h2>
+      <p class="where">In <a href="https://console.cloud.google.com/" target="_blank" rel="noopener">console.cloud.google.com</a></p>
+      <ol>
+        <li>Sign in with the Google account you'll use, then use the project picker at the top to create a <strong>New project</strong> (for example, “Lofi Focus”).</li>
+        <li>Go to <strong>APIs &amp; Services → Library</strong> and enable both the <strong>Google Drive API</strong> and the <strong>Google Calendar API</strong>.</li>
+      </ol>
+      <div class="callout tip"><span>💡</span><p>Google moved the sign-in settings into a section called <strong>Google Auth Platform</strong>, which has <em>Branding</em>, <em>Audience</em>, <em>Data Access</em> and <em>Clients</em> tabs. Older guides call these “OAuth consent screen” and “Credentials”.</p></div>
+    </section>
+
+    <section class="step" id="branding">
+      <div class="num">2</div>
+      <h2>Fill in Branding</h2>
+      <p class="where">Google Auth Platform → <span>Branding</span></p>
+      <p>This is what people see on Google's sign-in screen. Fill in every field below, then click <strong>Save at the very bottom</strong> of the page.</p>
+      <table>
+        <tr><th>App name</th><td>Anything without the word “Google” in it, e.g. <code>Lofi Focus</code></td></tr>
+        <tr><th>User support email</th><td>Choose your address from the dropdown</td></tr>
+        <tr><th>App logo</th><td><strong>Leave empty.</strong> Uploading a logo means Google has to review your app before it can be published.</td></tr>
+        <tr><th>Application home page</th><td><code class="fill-home">https://your-site</code></td></tr>
+        <tr><th>Privacy policy link</th><td><code class="fill-privacy">https://your-site/privacy.html</code>. This page comes with Lofi Focus.</td></tr>
+        <tr><th>Terms of service link</th><td>Leave empty</td></tr>
+        <tr><th>Authorized domains</th><td>Your domain without <code>https://</code>, e.g. <code class="fill-domain">example.com</code> or <code>yourname.github.io</code>. <strong>Press Enter</strong> so it turns into a chip.</td></tr>
+        <tr><th>Developer contact</th><td>Your email address</td></tr>
+      </table>
+      <div class="callout warn"><span>⚠️</span><p>If publishing later says “you must complete your configuration on the Branding page”, one of these is missing (usually the privacy policy link), a logo is uploaded, or the page wasn't saved.</p></div>
+    </section>
+
+    <section class="step" id="audience">
+      <div class="num">3</div>
+      <h2>Choose who can sign in</h2>
+      <p class="where">Google Auth Platform → <span>Audience</span></p>
+      <p>Set the <strong>User type</strong> to <strong>External</strong>. (If your project belongs to a work or school organisation, still pick External. <em>Internal</em> rejects personal <code>@gmail.com</code> accounts.) Then pick one:</p>
+      <div class="choice">
+        <div>
+          <h3>🔒 Just me (and a few people)</h3>
+          <p>Leave the app in <strong>Testing</strong> and add each person's Google address under <strong>Test users</strong>, typed in lowercase. There's a limit of 100.</p>
+        </div>
+        <div>
+          <h3>👋 Friends, without a list</h3>
+          <p>Click <strong>Publish app</strong>. Anyone with a Google account can sign in, up to 100 people while the app is unverified.</p>
+        </div>
+      </div>
+      <p>Either way, the first time someone signs in, Google shows <strong>“Google hasn't verified this app”</strong>. That's expected for a personal app. Click <strong>Advanced → Go to <span class="fill-domain-text">your site</span> (unsafe)</strong> to continue. It only appears because the app asks for calendar access, which Google counts as sensitive. Getting rid of the screen requires Google's formal review, which isn't worth it for a personal tool.</p>
+    </section>
+
+    <section class="step" id="scopes">
+      <div class="num">4</div>
+      <h2>Add the two permissions</h2>
+      <p class="where">Google Auth Platform → <span>Data Access</span> → Add or remove scopes</p>
+      <p>These are the only permissions Lofi Focus ever asks for:</p>
+      <table>
+        <tr><th><code>…/auth/drive.file</code></th><td>Lets the app see and save only the files it created itself, in a <em>Lofi Focus</em> folder, never the rest of your Drive.</td></tr>
+        <tr><th><code>…/auth/calendar.events</code></th><td>Lets the app show your events in its calendar and, if you choose, add finished focus sessions.</td></tr>
+      </table>
+      <p>Search for them by name in the scope picker, tick both, click <strong>Update</strong>, then <strong>Save</strong>.</p>
+    </section>
+
+    <section class="step" id="client">
+      <div class="num">5</div>
+      <h2>Create the Web client</h2>
+      <p class="where">Google Auth Platform → <span>Clients</span> → Create client</p>
+      <ol>
+        <li>Application type: <strong>Web application</strong>. Give it any name.</li>
+        <li>Under <strong>Authorized JavaScript origins</strong>, click <strong>Add URI</strong> and paste this site's address, exactly as shown:
+          <div class="tool"><code id="origin">…</code><button type="button" class="copy" data-copy="origin">Copy</button></div>
+          Add each other address you open Lofi Focus from too, for example <code>http://localhost:8080</code> for testing on your computer, or both your custom domain and <code>https://yourname.github.io</code>.
+        </li>
+        <li>Leave <strong>Authorized redirect URIs</strong> empty. Lofi Focus signs in with a Google popup.</li>
+        <li>Click <strong>Create</strong> and copy the <strong>Client ID</strong>. It ends in <code>.apps.googleusercontent.com</code>.</li>
+      </ol>
+      <div class="callout tip"><span>💡</span><p>Origins must match character for character: <code>https</code> vs <code>http</code>, the port number, and no slash at the end. <code>localhost</code> and <code>127.0.0.1</code> count as different addresses. Changes can take up to 5 minutes to work.</p></div>
+    </section>
+
+    <section class="step" id="paste">
+      <div class="num">6</div>
+      <h2>Paste your Client ID</h2>
+      <p class="where">Here, or in Lofi Focus → Settings → Google → Google setup</p>
+      <div class="tool"><input id="clientId" placeholder="123456789012-abc….apps.googleusercontent.com" autocomplete="off" spellcheck="false" aria-label="Google OAuth Client ID"><button type="button" id="saveId">Save</button></div>
+      <p class="status" id="idStatus"></p>
+      <p>This saves it for this browser. To make it work for everyone who uses your copy, put it in <code>js/config.js</code> as <code>googleClientId: '…'</code> instead.</p>
+      <p>Then go back to Lofi Focus and try <strong>Settings → Save to Drive</strong>, or <strong>Connect</strong> in the Calendar. You can take back access any time at <a href="https://myaccount.google.com/permissions" target="_blank" rel="noopener">myaccount.google.com/permissions</a>.</p>
+    </section>
+
+    <section class="step" id="trouble">
+      <div class="num">?</div>
+      <h2>Troubleshooting</h2>
+      <details class="trouble"><summary><code>Error 401: invalid_client</code> “no registered origin”</summary><div>
+        <p>This page's exact address isn't in <strong>Authorized JavaScript origins</strong> (step 5). Check http vs https, the port, a slash at the end, and localhost vs 127.0.0.1.</p>
+        <p>Also check the Client ID: no quotes or spaces, and it must be the <em>Client ID</em>, not the client secret.</p>
+      </div></details>
+      <details class="trouble"><summary><code>Error 403: access_denied</code> “has not completed the Google verification process”</summary><div>
+        <p>The app is in Testing and this Google account isn't a <strong>Test user</strong>. Add the account (step 3), or publish the app.</p>
+      </div></details>
+      <details class="trouble"><summary>“Google hasn't verified this app”</summary><div>
+        <p>That's expected. Click <strong>Advanced → Go to … (unsafe)</strong>. It's your own app.</p>
+      </div></details>
+      <details class="trouble"><summary>“Ineligible accounts not added” when adding a test user</summary><div>
+        <p>The audience is set to <em>Internal</em> (switch to External), or the address has a typo or trailing space. Group addresses, aliases and supervised (child) accounts can't be test users.</p>
+      </div></details>
+      <details class="trouble"><summary>Nothing happens when I click Save to Drive or Connect</summary><div>
+        <p>Your browser may have blocked the sign-in popup. Allow popups for this site.</p>
+        <p>An ad or privacy blocker (uBlock Origin, AdGuard, Privacy Badger, Brave Shields) may be blocking <code>accounts.google.com</code>. In the browser console this shows as <code>net::ERR_BLOCKED_BY_CLIENT</code>. Allow this site in the blocker, or try a private window.</p>
+      </div></details>
+      <details class="trouble"><summary>“You must complete your configuration on the Branding page”</summary><div>
+        <p>A required Branding field is empty (often the privacy policy link), a logo is uploaded, or the page wasn't saved at the bottom. See step 2.</p>
+      </div></details>
+      <details class="trouble"><summary>Console messages I can ignore</summary><div>
+        <p>Blocked <code>doubleclick.net</code> or <code>googleads</code> requests are ads inside the YouTube player being stopped by an ad blocker.</p>
+        <p>“The AudioContext was not allowed to start” is expected: browsers only allow sound after your first click, and Lofi Focus starts audio on that click.</p>
+      </div></details>
+    </section>
+
+    <footer>Lofi Focus only uses your Google data to show it to you and save your own things back to your account. <a href="privacy.html">Privacy policy</a></footer>
+  </main>
+
+  <script>
+    (function () {
+      'use strict';
+      // Fill in this site's real addresses so they can be copied straight into Google's console.
+      const origin = location.origin, host = location.hostname;
+      const isWeb = /^https?:$/.test(location.protocol);
+      const domain = host.split('.').slice(-2).join('.'); // e.g. lofi.example.com -> example.com (github.io sites: use yourname.github.io)
+      document.getElementById('origin').textContent = isWeb ? origin : 'Open this page from your site (not as a file) to see its address';
+      if (isWeb && host !== 'localhost' && host !== '127.0.0.1') {
+        document.querySelectorAll('.fill-home').forEach((e) => { e.textContent = origin; });
+        document.querySelectorAll('.fill-privacy').forEach((e) => { e.textContent = origin + '/privacy.html'; });
+        document.querySelectorAll('.fill-domain').forEach((e) => { e.textContent = host.endsWith('.github.io') ? host : domain; });
+        document.querySelectorAll('.fill-domain-text').forEach((e) => { e.textContent = host; });
+      }
+
+      document.querySelectorAll('button.copy').forEach((b) => b.addEventListener('click', async () => {
+        const text = document.getElementById(b.dataset.copy).textContent;
+        try { await navigator.clipboard.writeText(text); b.textContent = 'Copied ✓'; } catch (e) { b.textContent = 'Select & copy'; }
+        setTimeout(() => { b.textContent = 'Copy'; }, 1800);
+      }));
+
+      // Save the Client ID where the app reads it (same key as Settings → Google setup).
+      const KEY = 'lofi.googleClientId', input = document.getElementById('clientId'), status = document.getElementById('idStatus');
+      try { input.value = JSON.parse(localStorage.getItem(KEY) || '""'); } catch (e) { /* ignore */ }
+      document.getElementById('saveId').addEventListener('click', () => {
+        const v = input.value.trim().replace(/^['"]|['"]$/g, '');
+        input.value = v;
+        if (!v) { status.className = 'status bad'; status.textContent = 'Paste the Client ID first.'; return; }
+        if (!/^[\w-]+\.apps\.googleusercontent\.com$/.test(v)) {
+          status.className = 'status bad';
+          status.textContent = 'That doesn’t look like a Client ID. It should end in .apps.googleusercontent.com (not the client secret).';
+          return;
+        }
+        try {
+          localStorage.setItem(KEY, JSON.stringify(v));
+          status.className = 'status ok';
+          status.textContent = 'Saved ✓ Go back to Lofi Focus (reload it if it’s open in another tab).';
+        } catch (e) {
+          status.className = 'status bad';
+          status.textContent = 'Couldn’t save in this browser. Paste it into Settings → Google in the app instead.';
+        }
+      });
+    })();
+  </script>
+</body>
+</html>
