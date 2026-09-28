@@ -51,6 +51,12 @@ Google Drive.
 
 ## Google setup (Drive and Calendar)
 
+> **Visitors don't need any of this.** `js/config.js` already contains the Client ID for
+> <https://lofi.toddtechtalks.com>, so people there just click **Save to Drive** or **Connect**
+> and sign in. The steps below are for setting that up, or for hosting your own copy. If you host
+> your own copy, replace the ID in `js/config.js` with yours; this one only works on
+> lofi.toddtechtalks.com.
+
 > **Easiest:** open **`google-setup.html`** on your site (**Settings → Google → Google setup →
 > Open the step-by-step setup guide**). It walks through the same steps, shows your site's exact
 > address with a Copy button, and saves your Client ID for you.

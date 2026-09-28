@@ -287,6 +287,13 @@
       rrect(c, x - 15, hy, 30, 26, 8, o.hair);
       for (let i = 0; i < 5; i++) rect(c, x - 14 + i * 6 + sin(o.t * 2 + i) * (1.2 + (o.wind || 0) * 2), hy + 24, 4, 3 + (i % 2), o.hair);
     }
+    if (o.turn) { // head turned a little to one side (-1 left, 1 right): a sliver of cheek and an ear show
+      const skin = o.skin || '#c99a7c';
+      c.save(); c.beginPath(); c.arc(x, hy, 15, 0, TAU); c.clip();
+      ellipse(c, x + o.turn * 14, hy + 3, 6, 10, skin);
+      c.restore();
+      ellipse(c, x + o.turn * 9.5, hy + 1, 2, 3, shade(skin, -0.12)); // ear
+    }
     if (o.rim) { // backlight catching the sides of the head (not across the top, which read as a headband)
       c.strokeStyle = o.rim; c.lineWidth = 1.2;
       c.beginPath(); c.arc(x, hy, 14.4, PI * 0.95, PI * 1.25); c.stroke();
