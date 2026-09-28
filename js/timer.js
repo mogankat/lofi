@@ -68,7 +68,7 @@
   };
 
   function complete(silent, skipped) {
-    const was = T.mode;
+    const was = T.mode, length = T.total;
     let next;
     if (was === 'focus') {
       if (!skipped) { T.cycle++; addStats(Math.max(1, Math.round(T.total / 60000))); }
@@ -82,7 +82,7 @@
     T.running = T.started = auto;
     if (auto) T.endAt = Date.now() + T.remaining;
     emit();
-    if (!silent && !skipped && T.onComplete) T.onComplete(was, next);
+    if (!silent && !skipped && T.onComplete) T.onComplete(was, next, length);
   }
 
   function tick() {

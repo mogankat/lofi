@@ -95,7 +95,7 @@ svg.fill { fill: currentColor; stroke: none; }
   font-size: 15px; font-weight: 700; color: var(--muted); font-variant-numeric: tabular-nums;
 }
 .weather[hidden] { display: none; }
-.progress { margin-top: 12px; }
+.progress { margin-top: 14px; }
 .progress { height: 4px; border-radius: 4px; background: var(--glass-3); overflow: hidden; }
 .progress > div { height: 100%; width: 0; background: var(--accent); border-radius: 4px; transition: width .3s linear, background .3s; }
 .controls { display: flex; gap: 10px; justify-content: center; align-items: center; margin: 16px 0 12px; }
@@ -118,6 +118,20 @@ svg.fill { fill: currentColor; stroke: none; }
 .dots { display: inline-flex; gap: 4px; }
 .dots i { width: 7px; height: 7px; border-radius: 50%; background: var(--glass-3); }
 .dots i.on { background: var(--accent); }
+
+/* ---------- Clock ---------- */
+.clock {
+  position: absolute; top: 24px; right: 24px; min-width: 176px; padding: 12px 20px;
+  text-align: center; cursor: grab; touch-action: none; user-select: none;
+  transition: opacity .8s var(--ease), box-shadow .2s;
+}
+.clock[hidden] { display: none; }
+.clock.moved { left: var(--x); top: var(--y); right: auto; }
+.clock.dragging { cursor: grabbing; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4); }
+.clock-time { display: flex; align-items: baseline; justify-content: center; gap: 6px; font-size: 40px; font-weight: 800; line-height: 1.05; font-variant-numeric: tabular-nums; }
+#clockAmpm { font-size: 14px; color: var(--muted); }
+.clock-date { margin-top: 2px; font-size: 13px; font-weight: 700; color: var(--muted); }
+.clock .weather { margin-top: 6px; }
 
 /* ---------- Dock ---------- */
 .dock {
@@ -409,6 +423,15 @@ input.plain, .h-name, .todo-text, .cd-label, .list-title, .j-title-in {
 .m-habit.all { box-shadow: 0 0 0 1.5px #d8ffc8; }
 .m-task { background: #8ec5ff; }
 .m-journal { background: #c9a6ff; }
+.m-gcal { background: #7fd6d0; }
+.gcal-bar { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; padding: 7px 10px; border-radius: 10px; background: var(--glass-2); font-size: 12.5px; color: var(--muted); }
+.gcal-bar[hidden] { display: none; }
+.gcal-bar .pill, .gcal-bar .link { margin-left: auto; }
+.gcal-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--glass-3); flex: none; }
+.gcal-dot.on { background: #7fd6d0; }
+.cal-events li { display: flex; gap: 8px; }
+.cal-events .ev-time { flex: none; width: 58px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.cal-events a { color: var(--text); }
 .cal-legend { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 10px; font-size: 12px; color: var(--muted); }
 .cal-legend span { display: flex; align-items: center; gap: 5px; }
 .cal-legend i { width: 10px; min-width: 10px; height: 10px; padding: 0; }
@@ -421,13 +444,26 @@ input.plain, .h-name, .todo-text, .cd-label, .list-title, .j-title-in {
 .cal-detail .pill { margin-top: 14px; }
 .cal-links .link { text-align: left; }
 
-/* scene customisation */
-.look { display: flex; flex-direction: column; gap: 8px; }
+/* scene customisation: collapsible sections */
+.look { display: flex; flex-direction: column; }
+.acc { border-bottom: 1px solid var(--line); }
+.acc summary { display: flex; align-items: center; gap: 8px; padding: 11px 2px; cursor: pointer; font-size: 14px; font-weight: 800; list-style: none; }
+.acc summary::-webkit-details-marker { display: none; }
+.acc summary::after { content: ''; width: 7px; height: 7px; border-right: 2px solid var(--muted); border-bottom: 2px solid var(--muted); transform: rotate(45deg) translateY(-2px); transition: transform .2s; }
+.acc[open] summary::after { transform: rotate(-135deg) translateY(-2px); }
+.acc-peek { margin-left: auto; display: flex; gap: 4px; align-items: center; font-size: 12px; font-weight: 700; color: var(--muted); }
+.peek-dot { width: 12px; height: 12px; border-radius: 50%; background: var(--c); border: 1px solid rgba(255, 255, 255, 0.3); }
+.peek-dot.auto { background: conic-gradient(#e89a8c, #f0c05a, #93d6c4, #8ec5ff, #c9a6ff, #e89a8c); opacity: .55; }
+.acc-body { display: flex; flex-direction: column; gap: 10px; padding: 0 2px 14px; }
+.acc-body .check { margin: 0; }
+.acc-body .hint { margin: 0; }
+.fx-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 3px; }
+.reset-look { align-self: flex-start; margin-top: 12px; font-size: 13px; }
 .look-row { display: flex; flex-direction: column; gap: 5px; }
 .look-row[hidden] { display: none; }
 .look-label { font-size: 12.5px; font-weight: 700; color: var(--muted); }
 .swatches { display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
-.swatch { width: 24px; height: 24px; border-radius: 50%; background: var(--c); border: 2px solid rgba(255, 255, 255, 0.15); }
+.swatch { width: 22px; height: 22px; border-radius: 50%; background: var(--c); border: 2px solid rgba(255, 255, 255, 0.15); }
 .swatch.auto { width: auto; padding: 0 9px; border-radius: 12px; font-size: 11px; font-weight: 800; background: var(--glass-2); color: var(--muted); }
 .swatch.active { border-color: #fff; box-shadow: 0 0 0 2px var(--accent); }
 .swatch.auto.active { color: var(--text); }
@@ -457,9 +493,9 @@ input.plain, .h-name, .todo-text, .cd-label, .list-title, .j-title-in {
 /* ---------- Idle + zen ---------- */
 body.idle { cursor: none; }
 body.idle .dock { opacity: 0; pointer-events: none; }
-body.idle .timer { opacity: .4; }
+body.idle .timer, body.idle .clock { opacity: .4; }
 
-.zen-exit { position: absolute; top: 16px; right: 16px; display: none; background: var(--glass); }
+.zen-exit { position: absolute; bottom: 16px; right: 16px; display: none; background: var(--glass); }
 body.zen .zen-exit { display: grid; transition: opacity .8s; }
 body.zen.idle .zen-exit { opacity: 0; }
 body.zen .dock, body.zen .panel { display: none; }
@@ -467,7 +503,7 @@ body.zen .timer {
   left: 50%; top: 24px; transform: translateX(-50%); width: auto;
   padding: 10px 26px; background: rgba(20, 17, 36, 0.3); cursor: default;
 }
-body.zen .timer > :not(.time-row):not(.weather) { display: none; }
+body.zen .timer > :not(.time-row) { display: none; }
 body.zen .adj { display: none; }
 body.zen .time-row { margin: 0; }
 body.zen .time { font-size: 44px; }
@@ -480,6 +516,8 @@ body.zen.idle .timer { opacity: .55; }
 @media (max-width: 640px) {
   .timer { top: 12px; left: 12px; right: 12px; width: auto; padding: 12px 14px; cursor: default; }
   .timer.moved { left: 12px; top: 12px; }
+  .clock, .clock.moved { top: auto; left: auto; bottom: 76px; right: 12px; min-width: 0; padding: 8px 12px; }
+  .clock-time { font-size: 24px; }
   .grip { display: none; }
   .time { font-size: 58px; }
   .time-row { margin: 12px 0 4px; }

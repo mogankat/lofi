@@ -25,7 +25,9 @@ window.Lofi = window.Lofi || {};
     },
     save(key, value) {
       try { localStorage.setItem(PREFIX + key, JSON.stringify(value)); } catch (e) { /* private mode */ }
+      if (Lofi.store.onSave) Lofi.store.onSave(key);
     },
+    onSave: null, // set by backup.js for automatic Drive saves
   };
 
   const pad = (n) => String(n).padStart(2, '0');

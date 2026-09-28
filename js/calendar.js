@@ -9,7 +9,8 @@
 
   function dayInfo(key) {
     const focus = L.Timer.history()[key] || { sessions: 0, minutes: 0 };
-    return { focus, habits: L.Habits.doneOn(key), tasks: L.Todos.doneOn(key), journal: L.Journal.onDay(key) };
+    const events = [...L.GCal.onDay(key)].sort((a, b) => (a.allDay ? 0 : a.sort) - (b.allDay ? 0 : b.sort));
+    return { focus, habits: L.Habits.doneOn(key), tasks: L.Todos.doneOn(key), journal: L.Journal.onDay(key), events };
   }
 
   function render() {
@@ -17,6 +18,8 @@
     const today = U.dayKey(), habitCount = L.Habits.list().length;
     U.$('.cal-title', root).textContent = month.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
     U.$('.cal-today', root).hidden = month.getMonth() === new Date().getMonth() && month.getFullYear() === new Date().getFullYear();
+    renderGoogleBar();
+    L.GCal.loadMonth(month);
 
     const first = U.weekStart(month);
     U.$('.cal-dow', root).replaceChildren(...Array.from({ length: 7 }, (_, i) => el('span', { text: U.addDays(first, i).toLocaleDateString(undefined, { weekday: 'short' }) })));
@@ -34,6 +37,7 @@
       if (info.focus.sessions) marks.push(el('i', { class: 'm-focus', text: info.focus.sessions, title: `${info.focus.sessions} focus session(s)` }));
       if (info.habits.length) marks.push(el('i', { class: 'm-habit' + (habitCount && info.habits.length >= habitCount ? ' all' : ''), text: info.habits.length, title: `${info.habits.length} habit(s) done` }));
       if (info.tasks.length) marks.push(el('i', { class: 'm-task', text: info.tasks.length, title: `${info.tasks.length} task(s) done` }));
+      if (info.events.length) marks.push(el('i', { class: 'm-gcal', text: info.events.length, title: `${info.events.length} Google Calendar event(s)` }));
       if (info.journal.length) marks.push(el('i', { class: 'm-journal', text: '✎', title: `${info.journal.length} journal entr${info.journal.length > 1 ? 'ies' : 'y'}` }));
       cells.push(el('button', {
         type: 'button',
@@ -59,6 +63,11 @@
 
     U.$('.cal-detail', root).replaceChildren(
       el('h3', { text: U.fmtDate(d, { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }) }),
+      L.GCal.cfg.show && L.GCal.cfg.linked ? section('📅 Google Calendar', info.events.length
+        ? el('ul', { class: 'cal-events' }, info.events.map((e) => el('li', {},
+          el('span', { class: 'ev-time', text: e.allDay ? 'All day' : e.time }),
+          el('a', { href: e.link, target: '_blank', rel: 'noopener noreferrer', text: e.title, title: 'Open in Google Calendar' }))))
+        : none(L.GCal.connected() ? 'No events.' : 'Connect above to see events.')) : null,
       section('🍅 Focus', info.focus.sessions
         ? el('p', { text: `${info.focus.sessions} session${info.focus.sessions > 1 ? 's' : ''} · ${U.fmtMinutes(info.focus.minutes)}` })
         : none('No focus sessions.')),
@@ -79,11 +88,25 @@
     );
   }
 
+  function renderGoogleBar() {
+    const G = L.GCal, bar = U.$('.gcal-bar', root), pending = G.pending();
+    if (!G.cfg.show && !G.cfg.logFocus) { bar.hidden = true; return; }
+    bar.hidden = false;
+    bar.replaceChildren(...(G.connected()
+      ? [el('span', { class: 'gcal-dot on' }), el('span', { text: G.error || 'Google Calendar connected' }),
+        el('button', { type: 'button', class: 'link', text: 'Refresh', onclick: () => G.refresh(month) })]
+      : [el('span', { class: 'gcal-dot' }),
+        el('span', { text: pending ? `${pending} focus session(s) waiting to be logged` : G.cfg.linked ? 'Google Calendar — sign in again to load events' : 'See your Google Calendar here' }),
+        el('button', { type: 'button', class: 'pill small', text: 'Connect', onclick: () => G.connect() })]));
+  }
+
   Cal.init = (container) => {
     root = container;
+    L.GCal.onChange = () => { if (root) render(); };
     const shift = (n) => { month = new Date(month.getFullYear(), month.getMonth() + n, 1); render(); };
     root.append(
       el('div', { class: 'cal-main' },
+        el('div', { class: 'gcal-bar' }),
         el('div', { class: 'cal-nav' },
           U.iconBtn('left', { 'aria-label': 'Previous month', onclick: () => shift(-1) }),
           el('span', { class: 'cal-title' }),
@@ -99,7 +122,8 @@
           el('span', {}, el('i', { class: 'm-focus' }), 'Focus sessions'),
           el('span', {}, el('i', { class: 'm-habit' }), 'Habits'),
           el('span', {}, el('i', { class: 'm-task' }), 'Tasks'),
-          el('span', {}, el('i', { class: 'm-journal' }), 'Journal')),
+          el('span', {}, el('i', { class: 'm-journal' }), 'Journal'),
+          el('span', {}, el('i', { class: 'm-gcal' }), 'Google Calendar')),
         el('p', { class: 'hint cal-summary' })),
       el('div', { class: 'cal-detail' }),
     );

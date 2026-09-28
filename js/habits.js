@@ -29,6 +29,7 @@
   }
 
   // Consecutive days up to today (or yesterday, if today isn't checked yet).
+  H.streak = (id) => streak(id);
   function streak(id) {
     let d = new Date(), n = 0;
     if (!H.isDone(id, U.dayKey(d))) d = U.addDays(d, -1);
