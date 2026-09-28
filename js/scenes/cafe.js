@@ -2,7 +2,7 @@
 (function () {
   'use strict';
   const K = window.Lofi.sceneKit;
-  const { TAU, PHASES, rng, rect, circle, ellipse, rrect, poly, line, vgrad, glow, pool, vignette, shade, sky, makeStars, stars, sunOrMoon, makeFlock, flock, makeLayer, lookOf, gear, outfit, FRIEND, drawPet, perchBird, owl, backFigure, legs, steam } = K;
+  const { TAU, PHASES, rng, rect, circle, ellipse, rrect, poly, line, vgrad, glow, pool, vignette, shade, sky, makeStars, stars, sunOrMoon, makeFlock, flock, makeLayer, lookOf, headwear, friendWear, outfit, FRIEND, drawPet, perchBird, owl, backFigure, legs, steam } = K;
   const { sin, round, random } = Math;
 
   const CAFE = {
@@ -197,11 +197,11 @@
           };
           if (lk.friend) {
             seat(cx + 92, FRIEND.pants);
-            backFigure(f, cx + 92, 160, { t, torso: 68, top: FRIEND.top, shade: FRIEND.shade, hair: FRIEND.hair, longHair: true, rim: P.rim, bob: sin(t * 1.1 + 2) * 0.5 });
+            backFigure(f, cx + 92, 160, { t, torso: 68, top: FRIEND.top, shade: FRIEND.shade, hair: FRIEND.hair, longHair: true, ...friendWear(lk), rim: P.rim, bob: sin(t * 1.1 + 2) * 0.5 });
           }
           seat(cx, '#3a3a55');
           backFigure(f, cx, 158, {
-            t, torso: 70, top: fit.top, shade: fit.shade, hair: lk.hair || '#3a2420', phones: gear(lk, '#e8e0d0'),
+            t, torso: 70, top: fit.top, shade: fit.shade, hair: lk.hair || '#3a2420', ...headwear(lk, '#e8e0d0'),
             rim: P.rim, bob: sin(t * 1.2) * 0.6, armL: sin(t * 0.5) > 0.7 ? -3 : 0,
           });
           if (lk.pet === 'dog') drawPet(f, lk, cx - 48, 270, t); // on the floor by the stool

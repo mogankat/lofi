@@ -2,7 +2,7 @@
 (function () {
   'use strict';
   const K = window.Lofi.sceneKit;
-  const { TAU, PHASES, rng, rect, circle, ellipse, rrect, poly, line, vgrad, glow, pool, vignette, shade, sky, makeStars, stars, moon, sunOrMoon, makeFlock, flock, makeLayer, lookOf, outfit, FRIEND, drawPet, perchBird, owl, backFigure, flames } = K;
+  const { TAU, PHASES, rng, rect, circle, ellipse, rrect, poly, line, vgrad, glow, pool, vignette, shade, sky, makeStars, stars, moon, sunOrMoon, makeFlock, flock, makeLayer, lookOf, headwear, friendWear, outfit, FRIEND, drawPet, perchBird, owl, backFigure, flames } = K;
   const { sin, round } = Math;
 
   const HOME = {
@@ -174,10 +174,10 @@
           drawPet(f, lk, cx - 4, 238, t);
           const chairCol = lk.furniture || '#6a3a4a';
           if (lk.friend) {
-            backFigure(f, cx - 96, 200, { t, torso: 40, top: FRIEND.top, shade: FRIEND.shade, hair: FRIEND.hair, longHair: true, rim: 'rgba(255,170,100,0.6)', bob: sin(t * 0.9 + 2) * 0.5 });
+            backFigure(f, cx - 96, 200, { t, torso: 40, top: FRIEND.top, shade: FRIEND.shade, hair: FRIEND.hair, longHair: true, ...friendWear(lk, true), rim: 'rgba(255,170,100,0.6)', bob: sin(t * 0.9 + 2) * 0.5 });
             armchair(f, cx - 96, chairCol);
           }
-          backFigure(f, cx + 96, 198, { t, torso: 40, top: fit.top, shade: fit.shade, hair: lk.hair || '#3a2420', rim: 'rgba(255,170,100,0.6)', bob: sin(t * 0.8) * 0.5 });
+          backFigure(f, cx + 96, 198, { t, torso: 40, top: fit.top, shade: fit.shade, hair: lk.hair || '#3a2420', ...headwear(lk, null, '#c9574a', true), rim: 'rgba(255,170,100,0.6)', bob: sin(t * 0.8) * 0.5 });
           armchair(f, cx + 96, chairCol);
           rrect(f, cx + 58, 230, 26, 9, 3, '#c8b890'); // blanket over the arm
           layer.end(c, P.tint, 0.4);

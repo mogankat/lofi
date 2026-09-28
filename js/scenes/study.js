@@ -2,7 +2,7 @@
 (function () {
   'use strict';
   const K = window.Lofi.sceneKit;
-  const { TAU, PI, PHASES, rng, rect, circle, ellipse, rrect, poly, line, vgrad, glow, pool, vignette, shade, sky, makeStars, stars, moon, sunOrMoon, makeLayer, lookOf, gear, outfit, drawPet, perchBird, owl, backFigure, steam, makeFlock, flock } = K;
+  const { TAU, PI, PHASES, rng, rect, circle, ellipse, rrect, poly, line, vgrad, glow, pool, vignette, shade, sky, makeStars, stars, moon, sunOrMoon, makeLayer, lookOf, headwear, outfit, drawPet, perchBird, owl, backFigure, steam, makeFlock, flock } = K;
   const { sin, cos, round } = Math;
 
   const BULBS = [['#ffd27f', [255, 210, 127]], ['#ff9d8a', [255, 157, 138]], ['#9fd3ff', [159, 211, 255]], ['#c6f2a4', [198, 242, 164]]];
@@ -162,7 +162,7 @@
           f.fillRect(cx - 33, dy - 37, 66, 34);
           rect(f, cx - 40, dy - 2, 80, 3, '#9a9aaa');
           backFigure(f, cx, 180, {
-            t, torso: 74, top: fit.top, shade: fit.shade, hair: lk.hair || '#2b1d2a', phones: gear(lk, '#d9d2ea'),
+            t, torso: 74, top: fit.top, shade: fit.shade, hair: lk.hair || '#2b1d2a', ...headwear(lk, '#d9d2ea'),
             rim: P.moon ? 'rgba(170,200,255,0.6)' : P.rim, bob: sin(t * TAU * 75 / 60) * 0.8,
             armL: round(sin(t * 9) * 0.8), armR: round(sin(t * 9 + 1.7) * 0.8),
           });

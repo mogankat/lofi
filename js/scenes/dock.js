@@ -2,7 +2,7 @@
 (function () {
   'use strict';
   const K = window.Lofi.sceneKit;
-  const { TAU, PHASES, rng, rect, rrect, poly, line, vgrad, glow, vignette, sky, stars, sunOrMoon, makeLayer, lookOf, gear, outfit, FRIEND, drawPet, perchBird, owl, backFigure, legs } = K;
+  const { TAU, PHASES, rng, rect, rrect, poly, line, vgrad, glow, vignette, sky, stars, sunOrMoon, makeLayer, lookOf, headwear, friendWear, outfit, FRIEND, drawPet, perchBird, owl, backFigure, legs } = K;
   const { sin, cos, abs, max, min, round, pow } = Math;
 
   const SEA = {
@@ -128,12 +128,12 @@
           legs(f, cx + 14, 223, 13, { t, swing: 2 });
           if (lk.friend) {
             legs(f, cx - 52, 223, 12, { t: t + 2, swing: 1.5, pants: FRIEND.pants });
-            backFigure(f, cx - 52, 191, { t, torso: 25, top: '#c98a6a', shade: '#a86f52', hair: FRIEND.hair, longHair: true, wind, rim, bob: sin(t * 0.8 + 2) * 0.5 });
+            backFigure(f, cx - 52, 191, { t, torso: 25, top: '#c98a6a', shade: '#a86f52', hair: FRIEND.hair, longHair: true, ...friendWear(lk), wind, rim, bob: sin(t * 0.8 + 2) * 0.5 });
             later.push(fishing(f, cx - 68, 210, cx - 118, 152 + sin(t * 0.8 + 1) * 1.5, cx - 140, 244 + sin(t * 1.4 + 1) * 0.8, t + 3));
           }
           drawPet(f, lk, lk.friend ? cx - 100 : cx - 44, 216, t);
           backFigure(f, cx + 14, 190, {
-            t, torso: 26, top: fit.top, shade: fit.shade, hair: lk.hair || '#4a2e28', phones: gear(lk, '#3a3548'), wind,
+            t, torso: 26, top: fit.top, shade: fit.shade, hair: lk.hair || '#4a2e28', ...headwear(lk, '#3a3548'), wind,
             rim, bob: sin(t * 0.9) * 0.5,
           });
           later.push(fishing(f, cx + 30, 210, cx + 80, 150 + sin(t * 0.9) * 1.5, cx + 104, 246 + sin(t * 1.6) * 0.8, t));
