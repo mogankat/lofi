@@ -695,6 +695,14 @@
     if (!L.Backup.clientId()) $('.drive-setup').open = true;
     L.Backup.renderStatus();
 
+    // sync across devices
+    $('#setSync').addEventListener('change', (e) => L.Sync.setOn(e.target.checked));
+    $('#syncNow').addEventListener('click', () => L.Sync.sync({ interactive: true }));
+    $('#syncBtn').addEventListener('click', () => L.Sync.sync({ interactive: true }));
+    L.Sync.onChange = renderSync;
+    setInterval(renderSync, 30000); // keep "Synced 3 min ago" current
+    renderSync();
+
     const locate = () => Weather.locate().catch((e) => { toast(e.message, 6000); $('#setCity').focus(); });
     $('#setWeather').addEventListener('change', (e) => {
       Weather.setOn(e.target.checked);
@@ -713,6 +721,15 @@
         $('#setCity').blur();
       } catch (err) { toast(err.message, 6000); }
     });
+  }
+
+  function renderSync() {
+    const S = L.Sync, btn = $('#syncBtn'), text = S.statusText();
+    btn.hidden = !S.isOn();
+    btn.dataset.state = S.state;
+    btn.title = `Sync: ${text}`;
+    $('#setSync').checked = S.isOn();
+    $('.sync-status').textContent = S.isOn() ? text : '';
   }
 
   // ======================= Panels, zen, idle, keys =======================

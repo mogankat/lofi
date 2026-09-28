@@ -164,6 +164,20 @@ Browsers only allow sound after your first click; the app starts audio on that c
 
 ### What gets saved where
 
+**Sync across devices** (Settings → Google → Sync across devices, turned on on each device)
+keeps your journal, habits and check-offs, to-do lists and focus history the same everywhere,
+through `lofi-focus-sync.json` in the `Lofi Focus` Drive folder:
+- It pulls when the page opens or you switch back to it, pushes a few seconds after a change,
+  and checks every minute.
+- If both devices changed something before syncing, they're merged item by item, keeping the
+  newest version of each. Nothing added on either device is lost, and deletions are remembered
+  so deleted items don't come back.
+- Layout, scene, volumes, stations and running timers stay per device.
+- Google's browser sign-in lasts an hour and can't renew in the background (that needs a
+  server). So after opening the page, your first click signs you in again with a quick popup,
+  which usually closes by itself. The ☁ button in the dock shows the status (a teal dot means
+  synced, an orange dot means it needs a click) and syncs on demand.
+
 **Save to Drive** creates a `Lofi Focus` folder containing:
 - `lofi-focus-backup.json`: everything, used by **Restore from Drive** on another computer.
 - `Journal.md`, `To-do.md` and `Habits.md`: readable copies.

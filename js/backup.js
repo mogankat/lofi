@@ -103,7 +103,8 @@
         return await api('PATCH', `https://www.googleapis.com/upload/drive/v3/files/${id}?uploadType=multipart`, { body: multipart({ name: file.name }), headers });
       } catch (e) { if (e.status !== 404) throw e; }
     }
-    const f = await api('POST', 'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', { body: multipart({ name: file.name, mimeType: file.mime, parents: [parent] }), headers });
+    const folder = typeof parent === 'function' ? await parent() : parent; // looked up only when creating
+    const f = await api('POST', 'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', { body: multipart({ name: file.name, mimeType: file.mime, parents: [folder] }), headers });
     L.store.save(file.key, f.id);
     return f;
   }
@@ -152,11 +153,16 @@
   // Keep Drive up to date while signed in (tokens last an hour; after that the
   // next manual save signs in again).
   let autoTimer = null;
-  L.store.onSave = (key) => {
-    if (key.startsWith('drive') || !L.store.load('driveAuto', false) || !L.Google.hasToken(SCOPE)) return;
+  L.store.listen((key) => {
+    if (key.startsWith('drive') || key === 'syncMeta' || !L.store.load('driveAuto', false) || !L.Google.hasToken(SCOPE)) return;
     clearTimeout(autoTimer);
     autoTimer = setTimeout(() => B.saveToDrive({ quiet: true }), 30000);
-  };
+  });
+
+  // Shared with sync.js
+  B.api = api;
+  B.folderId = folderId;
+  B.upsert = upsert;
 
   B.renderStatus = (msg) => {
     const last = L.store.load('driveLastSync', null);

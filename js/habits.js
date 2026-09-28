@@ -77,7 +77,7 @@
           }))),
         el('span', { class: 'h-streak' + (s ? ' on' : ''), text: s || '·', title: s ? `${s}-day streak` : 'No streak yet' }),
         U.iconBtn('x', { class: 'icon-btn del', title: 'Delete habit', 'aria-label': `Delete ${h.name}`, onclick: () => {
-          if (confirm(`Delete the habit “${h.name}”? Its check-offs will be removed from the calendar.`)) { habits.splice(i, 1); save(); }
+          if (confirm(`Delete the habit “${h.name}”? Its check-offs will be removed from the calendar.`)) { habits.splice(i, 1); U.forget(h.id); save(); }
         } }),
       );
     }));
@@ -115,6 +115,12 @@
     render();
   };
   H.onOpen = render;
+  H.reload = () => { // new data arrived from another device (sync)
+    habits = L.store.load('habits', []);
+    log = L.store.load('habitLog', {});
+    if (root) U.keepFocus(root, render);
+    if (H.onChange) H.onChange();
+  };
 
   L.Habits = H;
 })();

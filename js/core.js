@@ -6,6 +6,7 @@ window.Lofi = window.Lofi || {};
   'use strict';
   const PREFIX = 'lofi.';
   const clone = (v) => (v && typeof v === 'object' ? JSON.parse(JSON.stringify(v)) : v);
+  const listeners = [];
 
   Lofi.store = {
     PREFIX,
@@ -25,9 +26,10 @@ window.Lofi = window.Lofi || {};
     },
     save(key, value) {
       try { localStorage.setItem(PREFIX + key, JSON.stringify(value)); } catch (e) { /* private mode */ }
-      if (Lofi.store.onSave) Lofi.store.onSave(key);
+      for (const fn of listeners) fn(key);
     },
-    onSave: null, // set by backup.js for automatic Drive saves
+    // Called with the key after every save (automatic Drive backup, sync).
+    listen(fn) { listeners.push(fn); },
   };
 
   const pad = (n) => String(n).padStart(2, '0');
@@ -81,6 +83,15 @@ window.Lofi = window.Lofi || {};
     },
 
     move(arr, from, to) { const [x] = arr.splice(from, 1); arr.splice(to, 0, x); return arr; },
+
+    // Remember that an item (journal entry, habit, to-do or list) was deleted, so
+    // syncing with another device doesn't bring it back. Kept for 90 days.
+    forget(id) {
+      const gone = Lofi.store.load('deletedIds', {}), now = Date.now();
+      for (const [k, at] of Object.entries(gone)) if (now - at > 90 * 864e5) delete gone[k];
+      gone[id] = now;
+      Lofi.store.save('deletedIds', gone);
+    },
 
     toast(msg, ms = 4500) {
       const el = document.getElementById('toast');

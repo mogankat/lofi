@@ -166,6 +166,14 @@ body.timer-closed .timer { display: none; }
   font-size: 10px; font-weight: 800; line-height: 15px; text-align: center;
 }
 .badge:empty { display: none; }
+/* sync status on the dock's cloud button */
+.sync-btn[hidden] { display: none; }
+.sync-btn::after { content: ''; position: absolute; top: 9px; right: 9px; width: 7px; height: 7px; border-radius: 50%; background: transparent; }
+.sync-btn[data-state='ok']::after { background: #7fd6d0; }
+.sync-btn[data-state='signin']::after { background: var(--accent); }
+.sync-btn[data-state='error']::after { background: #ff7a6a; }
+.sync-btn[data-state='syncing'] svg { animation: syncPulse 1s ease-in-out infinite alternate; }
+@keyframes syncPulse { from { opacity: 1; } to { opacity: .35; } }
 .sep { width: 1px; height: 26px; background: var(--line); margin: 0 6px; flex: none; }
 .now-playing { display: flex; align-items: center; gap: 8px; min-width: 0; }
 .now-playing .icon { width: 36px; height: 36px; background: var(--accent); color: var(--accent-ink); }

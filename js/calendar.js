@@ -129,6 +129,7 @@
     render();
   };
   Cal.onOpen = render;
+  Cal.refresh = render;
 
   L.Calendar = Cal;
 })();

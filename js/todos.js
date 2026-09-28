@@ -4,7 +4,8 @@
   'use strict';
   const L = window.Lofi, U = L.util, { el } = U;
 
-  const data = L.store.load('todos', { lists: [{ id: 'todo', name: 'To-do', items: [] }], active: 'todo' });
+  const DEFAULT = { lists: [{ id: 'todo', name: 'To-do', items: [] }], active: 'todo' };
+  let data = L.store.load('todos', DEFAULT);
   let root = null;
 
   const T = { onChange: null };
@@ -57,7 +58,7 @@
         } }),
         text,
         U.iconBtn('focus', { class: 'icon-btn focus-btn', title: 'Focus on this — sets it as the timer’s task', 'aria-label': `Focus on ${item.text}`, onclick: () => L.ui.setTask(item.text) }),
-        U.iconBtn('x', { class: 'icon-btn del', title: 'Delete task', 'aria-label': `Delete ${item.text}`, onclick: () => { list.items.splice(i, 1); save(); } }),
+        U.iconBtn('x', { class: 'icon-btn del', title: 'Delete task', 'aria-label': `Delete ${item.text}`, onclick: () => { list.items.splice(i, 1); U.forget(item.id); save(); } }),
       );
     }));
 
@@ -80,6 +81,7 @@
           const l = active();
           if (!confirm(`Delete the list “${l.name}” and its ${l.items.length} task(s)?`)) return;
           data.lists = data.lists.filter((x) => x !== l);
+          U.forget(l.id);
           data.active = data.lists[0].id;
           save();
         } })),
@@ -101,6 +103,7 @@
           const archive = L.store.load('todoArchive', []);
           archive.push(...l.items.filter((i) => i.done).map((i) => ({ text: i.text, list: l.name, doneAt: i.doneAt })));
           L.store.save('todoArchive', archive);
+          l.items.filter((i) => i.done).forEach((i) => U.forget(i.id));
           l.items = l.items.filter((i) => !i.done);
           save();
         } })),
@@ -109,6 +112,11 @@
     render();
   };
   T.onOpen = render;
+  T.reload = () => { // new data arrived from another device (sync)
+    data = L.store.load('todos', DEFAULT);
+    if (root) U.keepFocus(root, render);
+    if (T.onChange) T.onChange();
+  };
 
   // Include cleared tasks too, so history isn't lost.
   const liveDoneOn = T.doneOn;
