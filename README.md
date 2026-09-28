@@ -70,19 +70,22 @@ You don't need a client secret. Never put one in this page, because everything h
 
 ### 2. Google Auth Platform → Branding
 
-Fill this in completely and click **Save** at the very bottom. Publishing fails with "you must
-complete your configuration on the Branding page" if anything is missing.
+Fill in each field exactly as shown, then click **Save** at the very bottom. Publishing fails
+with "you must complete your configuration on the Branding page" if anything is missing.
 
-| Field | What to enter |
+The examples use the site `https://lofi.toddtechtalks.com`. Replace it with your own address,
+or open `google-setup.html` on your site, which fills in your addresses with Copy buttons.
+
+| Field | Enter exactly |
 | --- | --- |
-| App name | Anything without "Google" in it, e.g. `Lofi Focus` |
-| User support email | Pick your address from the dropdown |
-| App logo | **Leave empty.** Uploading a logo means Google has to review the app before it can be published. |
-| Application home page | Your site, e.g. `https://lofi.example.com` |
-| Application privacy policy link | `https://lofi.example.com/privacy.html`. This page ships with the app, see `privacy.html` |
+| App name | `Lofi Focus` |
+| User support email | Click the box and pick your own email address from the list |
+| App logo | Don't upload anything. A logo means Google has to review the app before it can be published. |
+| Application home page | `https://lofi.toddtechtalks.com` |
+| Application privacy policy link | `https://lofi.toddtechtalks.com/privacy.html` (this page ships with the app) |
 | Application terms of service link | Leave empty |
-| Authorized domains | Your registrable domain without `https://`, e.g. `example.com` or `yourname.github.io`. Press Enter so it turns into a chip. |
-| Developer contact information | Your email address |
+| Authorized domains | Click **+ Add domain**, enter `toddtechtalks.com`, and press **Enter**. That's your address minus `https://` and the first part (`lofi.`). For a GitHub Pages address like `https://yourname.github.io`, enter `yourname.github.io`. |
+| Developer contact information | Type your own email address and press **Enter** |
 
 ### 3. Google Auth Platform → Audience
 
@@ -109,18 +112,25 @@ Click **Add or remove scopes** and add exactly these two, which are all the app 
 
 ### 5. Google Auth Platform → Clients
 
-1. **Create client → Web application**, and give it any name.
-2. Under **Authorized JavaScript origins**, add every address you open the page from, **exactly**
-   as your browser shows it. To be sure, run `location.origin` in the browser's console.
-   - Include `http://` or `https://`, and the port if there is one: `http://localhost:8080`.
-   - No trailing slash, no path, no wildcards.
-   - `http://localhost:8080` and `http://127.0.0.1:8080` are *different* origins.
-   - If you use a custom domain (GitHub Pages `CNAME`), add that domain, e.g.
-     `https://lofi.example.com`, as well as or instead of `https://yourname.github.io`.
-3. Leave **Authorized redirect URIs** empty. The app uses Google's popup sign-in.
-4. **Create**, then copy the **Client ID** (`123…-abc….apps.googleusercontent.com`).
-   - Put it in `js/config.js` (`googleClientId: '…'`) so it works for everyone using your copy, or
-   - paste it into **Settings → Google → Google setup** for just this browser.
+1. Click **+ Create client** at the top of the page.
+2. **Application type:** open the dropdown and choose **Web application**.
+3. **Name:** enter `Lofi Focus web`.
+4. Under **Authorized JavaScript origins**, click **+ Add URI** and enter your site's address, for
+   example `https://lofi.toddtechtalks.com`. It must start with `https://` and have nothing after
+   it, **no** slash at the end.
+   - Also running it on your own computer? Click **+ Add URI** again and enter
+     `http://localhost:8080` (use your real port if it's different).
+5. **Authorized redirect URIs:** don't add anything.
+6. Click **Create**. In the *OAuth client created* box, click the copy icon next to **Client ID**.
+   It looks like `123456789012-a1b2c3d4e5f6.apps.googleusercontent.com`. Don't use the
+   *Client secret*; the app never needs it.
+7. Give the Client ID to the app, in one of two ways:
+   - **Everyone who visits your site (recommended):** in `js/config.js`, set
+     `googleClientId: 'example.apps.googleusercontent.com'` with your real ID, then commit and
+     push. Visitors can then use Drive and Calendar without any setup of their own. A Client ID
+     isn't a secret; Google shows it in every sign-in link.
+   - **Only this browser:** paste it into **Settings → Google → Google setup**, or into step 6 of
+     `google-setup.html`.
 
 Changes in the console can take **up to 5 minutes** to take effect.
 
