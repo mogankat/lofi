@@ -217,17 +217,46 @@
     return tt - t;
   }
 
-  function chirp(o, t, b) {
-    const osc = ctx.createOscillator(), g = gain(0);
-    osc.frequency.value = b.f;
-    chain(osc, g, pan(b.p), o);
-    for (let k = 0; k < b.pulses; k++) {
-      const s = t + k * 0.05;
-      g.gain.setValueAtTime(0, s);
-      g.gain.linearRampToValueAtTime(b.g, s + 0.008);
-      g.gain.linearRampToValueAtTime(0, s + 0.035);
+  // A short synthetic reverb (decaying stereo noise) so outdoor sounds sit in a space.
+  let verbIR = null;
+  function outdoorVerb() {
+    if (!verbIR) {
+      const sr = ctx.sampleRate, len = Math.floor(sr * 1.6);
+      verbIR = ctx.createBuffer(2, len, sr);
+      for (let ch = 0; ch < 2; ch++) {
+        const d = verbIR.getChannelData(ch);
+        for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 3.2) * (i < sr * 0.012 ? i / (sr * 0.012) : 1);
+      }
     }
-    osc.start(t); osc.stop(t + b.pulses * 0.05 + 0.02);
+    const v = ctx.createConvolver();
+    v.buffer = verbIR;
+    return v;
+  }
+
+  // One field-cricket chirp: a few short pulses. Each pulse is a tone that the
+  // cricket's scraper chops into rapid "tooth" clicks (the raspy texture), with a
+  // soft swell and fade and a slight pitch drop — not a clean electronic beep.
+  function chirp(t, b) {
+    const n = b.pulses, span = n * (b.len + b.gap) + 0.05;
+    const car = ctx.createOscillator(), over = ctx.createOscillator(), teeth = ctx.createOscillator();
+    const overGain = gain(0.14), am = gain(1 - b.rasp), depth = gain(b.rasp), env = gain(0);
+    teeth.type = 'triangle';
+    teeth.frequency.value = b.tooth * rnd(0.97, 1.03);
+    chain(teeth, depth); depth.connect(am.gain);
+    chain(car, am); chain(over, overGain, am);
+    chain(am, env, b.out);
+    for (let k = 0; k < n; k++) {
+      const s = t + k * (b.len + b.gap) + rnd(-0.002, 0.002);
+      const f = b.f * rnd(0.995, 1.005), level = b.level * (k === 0 ? 0.8 : 1) * rnd(0.85, 1);
+      car.frequency.setValueAtTime(f * 1.012, s);
+      car.frequency.linearRampToValueAtTime(f * 0.985, s + b.len);
+      over.frequency.setValueAtTime(f * 2.024, s);
+      over.frequency.linearRampToValueAtTime(f * 1.97, s + b.len);
+      env.gain.setValueAtTime(0, s);
+      env.gain.setTargetAtTime(level, s, b.len * 0.18); // soft swell (no click)
+      env.gain.setTargetAtTime(0, s + b.len * 0.6, b.len * 0.22);
+    }
+    [car, over, teeth].forEach((o) => { o.start(t); o.stop(t + span); });
   }
 
   const BUILD = {
@@ -345,12 +374,45 @@
       return len + rnd(6, 13);
     }) }),
 
+    // A summer-night field: a couple of nearby field crickets, a muffled chorus of
+    // distant ones, and a tree cricket trilling on and off, all in some night air.
     crickets(o) {
-      const ticks = Array.from({ length: 4 }, () => {
-        const b = { f: rnd(4200, 5400), period: rnd(0.55, 1.1), pulses: 2 + ((Math.random() * 3) | 0), g: rnd(0.1, 0.3), p: rnd(-0.8, 0.8) };
-        return ticker((t) => { if (Math.random() > 0.12) chirp(o, t, b); return b.period * rnd(0.95, 1.05); });
+      const verb = outdoorVerb(), dry = gain(1), wet = gain(0.55);
+      dry.connect(o); chain(verb, wet, o);
+      const place = (near, p) => { // distance = quieter, duller, more reverb
+        const out = gain(1), pn = pan(p), send = gain(near ? 0.25 : 0.9);
+        chain(out, filt('lowpass', near ? 9000 : rnd(3200, 5200), 0.5), pn);
+        pn.connect(dry); chain(pn, send, verb);
+        return out;
+      };
+      const ticks = Array.from({ length: 7 }, (_, i) => {
+        const near = i < 2;
+        const b = {
+          f: rnd(4300, 5100), len: rnd(0.014, 0.022), gap: rnd(0.028, 0.042), pulses: 3 + ((Math.random() * 2) | 0),
+          tooth: rnd(260, 420), rasp: rnd(0.4, 0.6), period: rnd(0.42, 0.85),
+          level: near ? rnd(0.42, 0.6) : rnd(0.12, 0.2), out: place(near, near ? rnd(-0.6, 0.6) : rnd(-0.95, 0.95)),
+        };
+        return ticker((t) => {
+          if (Math.random() > 0.06) chirp(t, b);
+          return b.period * rnd(0.9, 1.1) * (Math.random() < 0.04 ? rnd(2, 6) : 1); // now and then a pause
+        });
       });
-      return { srcs: [], tick: (now, until) => ticks.forEach((k) => k(now, until)) };
+
+      // Tree cricket: a steady high trill (fast pulsing tone) that comes and goes.
+      const trill = ctx.createOscillator(), pulse = ctx.createOscillator(), tg = gain(0), tam = gain(0.5), tdepth = gain(0.5);
+      trill.frequency.value = rnd(2700, 3100);
+      pulse.frequency.value = rnd(45, 60);
+      chain(pulse, tdepth); tdepth.connect(tam.gain);
+      chain(trill, tam, tg, place(false, rnd(-0.7, 0.7)));
+      trill.start(); pulse.start();
+      const trillTick = ticker((t) => {
+        const on = rnd(3, 9);
+        tg.gain.setTargetAtTime(rnd(0.05, 0.09), t, 0.6);
+        tg.gain.setTargetAtTime(0, t + on, 0.8);
+        return on + rnd(2, 7);
+      });
+
+      return { srcs: [trill, pulse], tick: (now, until) => { ticks.forEach((k) => k(now, until)); trillTick(now, until); } };
     },
   };
 

@@ -67,39 +67,38 @@
         <svg viewBox="0 0 24 24"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2.5"/><path d="M9.5 3.5c1-.7 1.8-1 2.5-1s1.5.3 2.5 1"/></svg>
         <span class="badge time-badge" id="timerBadge"></span>
       </button>
-      <button class="dock-btn" data-panel="music" title="Music" aria-label="Music">
+      <button class="dock-btn" data-panel="music" title="Music (1)" aria-label="Music">
         <svg viewBox="0 0 24 24"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
       </button>
-      <button class="dock-btn" data-panel="sounds" title="Ambient sounds" aria-label="Ambient sounds">
+      <button class="dock-btn" data-panel="sounds" title="Ambient sounds (A or 2)" aria-label="Ambient sounds">
         <svg viewBox="0 0 24 24"><path d="M9.59 4.59A2 2 0 1 1 11 8H2m10.59 11.41A2 2 0 1 0 14 16H2m15.73-8.27A2.5 2.5 0 1 1 19.5 12H2"/></svg>
-        <span class="badge" id="soundBadge"></span>
       </button>
-      <button class="dock-btn" data-panel="scenes" title="Scenes" aria-label="Scenes">
+      <button class="dock-btn" data-panel="scenes" title="Scenes (3)" aria-label="Scenes">
         <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
       </button>
-      <button class="dock-btn" data-panel="look" title="Customize" aria-label="Customize">
+      <button class="dock-btn" data-panel="look" title="Customize (4)" aria-label="Customize">
         <svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 0 0 0 20c1.1 0 2-.9 2-2 0-.5-.2-1-.5-1.3-.3-.4-.5-.8-.5-1.3 0-1.1.9-2 2-2h2.4A5.6 5.6 0 0 0 22 9.8C22 5.5 17.5 2 12 2z"/><circle cx="7.5" cy="10.5" r="1.3"/><circle cx="11" cy="6.5" r="1.3"/><circle cx="16" cy="7.5" r="1.3"/></svg>
       </button>
       <span class="sep"></span>
-      <button class="dock-btn" data-panel="todos" title="To-do lists" aria-label="To-do lists">
+      <button class="dock-btn" data-panel="todos" title="To-do lists (D or 5)" aria-label="To-do lists">
         <svg viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
         <span class="badge" id="todoBadge"></span>
       </button>
-      <button class="dock-btn" data-panel="habits" title="Habits" aria-label="Habits">
+      <button class="dock-btn" data-panel="habits" title="Habits (H or 6)" aria-label="Habits">
         <svg viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="M22 4L12 14.01l-3-3"/></svg>
       </button>
-      <button class="dock-btn" data-panel="clocks" title="Stopwatch &amp; countdowns" aria-label="Stopwatch and countdowns">
+      <button class="dock-btn" data-panel="clocks" title="Stopwatch &amp; countdowns (W or 7)" aria-label="Stopwatch and countdowns">
         <svg viewBox="0 0 24 24"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2 2M9 2h6M12 2v3"/></svg>
         <span class="badge" id="clockBadge"></span>
       </button>
-      <button class="dock-btn" data-panel="journal" title="Journal" aria-label="Journal">
+      <button class="dock-btn" data-panel="journal" title="Journal (J or 8)" aria-label="Journal">
         <svg viewBox="0 0 24 24"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
       </button>
-      <button class="dock-btn" data-panel="calendar" title="Calendar" aria-label="Calendar">
+      <button class="dock-btn" data-panel="calendar" title="Calendar (9)" aria-label="Calendar">
         <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
       </button>
       <span class="sep"></span>
-      <button class="dock-btn" data-panel="settings" title="Settings" aria-label="Settings">
+      <button class="dock-btn" data-panel="settings" title="Settings (, or 0)" aria-label="Settings">
         <svg viewBox="0 0 24 24"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/></svg>
       </button>
       <span class="sep"></span>
@@ -138,7 +137,7 @@
           <button type="submit" class="pill">Add</button>
         </div>
       </form>
-      <p class="hint">Works with YouTube videos, live streams and playlists, or any direct radio stream (.mp3 / .aac). <button class="link" id="restoreStations">Restore default stations</button></p>
+      <p class="hint">Works with YouTube videos, live streams and playlists, or any direct radio stream (.mp3 / .aac). Seasonal stations appear on their own: 🍂 autumn September–November, 🎃 Halloween in October, 🎄 Christmas in December. <button class="link" id="restoreStations">Restore default stations</button></p>
     </section>
 
     <!-- Ambient sounds -->
@@ -288,6 +287,7 @@
       <dl class="keys">
         <dt>Space</dt><dd>Start / pause timer</dd>
         <dt>T</dt><dd>Show / hide the timer</dd>
+        <dt>C</dt><dd>Show / hide the clock</dd>
         <dt>R</dt><dd>Reset timer</dd>
         <dt>S</dt><dd>Skip to next session</dd>
         <dt>M</dt><dd>Play / pause music</dd>
@@ -296,6 +296,20 @@
         <dt>L</dt><dd>Change lighting</dd>
         <dt>Z</dt><dd>Zen mode</dd>
         <dt>F</dt><dd>Fullscreen</dd>
+        <dt>Esc</dt><dd>Close the open panel</dd>
+      </dl>
+      <h4>Panels <small>(press again to close)</small></h4>
+      <dl class="keys">
+        <dt>1</dt><dd>Music</dd>
+        <dt>A · 2</dt><dd>Ambient sounds</dd>
+        <dt>3</dt><dd>Scenes</dd>
+        <dt>4</dt><dd>Customize</dd>
+        <dt>D · 5</dt><dd>To-do lists</dd>
+        <dt>H · 6</dt><dd>Habits</dd>
+        <dt>W · 7</dt><dd>Stopwatch &amp; countdowns</dd>
+        <dt>J · 8</dt><dd>Journal</dd>
+        <dt>9</dt><dd>Calendar</dd>
+        <dt>, · 0</dt><dd>Settings</dd>
       </dl>
       <p class="hint">Everything is saved in this browser only. <button class="link" id="resetStats">Reset today’s count</button> · <button class="link" id="resetPos">Reset timer position</button> · <a class="link" href="privacy.html" target="_blank" rel="noopener">Privacy</a></p>
     </section>
