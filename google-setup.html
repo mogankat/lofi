@@ -55,6 +55,16 @@
     .tool input { flex: 1; min-width: 0; background: transparent; border: 0; color: var(--text); font: 14.5px ui-monospace, SFMono-Regular, Menlo, monospace; outline: none; padding: 6px; }
     button { font: inherit; font-weight: 800; font-size: 14px; border: 0; border-radius: 10px; padding: 8px 14px; background: var(--accent); color: var(--accent-ink); cursor: pointer; flex: none; }
     button.ghost { background: var(--card-2); color: var(--text); border: 1px solid var(--line); }
+    .enter { display: flex; align-items: center; gap: 8px; margin: 2px 0; padding: 6px 6px 6px 12px; border-radius: 10px; background: rgba(0, 0, 0, 0.3); border: 1px dashed rgba(255, 179, 138, 0.45); }
+    .enter code { flex: 1; background: none; border: 0; padding: 0; font-size: 14.5px; }
+    .enter button { padding: 5px 11px; font-size: 13px; }
+    .how { display: block; margin-top: 6px; font-size: 13.5px; }
+    ol.steps { padding-left: 22px; }
+    ol.steps > li { margin: 12px 0; }
+    ol.steps > li .enter { margin-top: 6px; }
+    .ready { display: flex; gap: 12px; margin: 22px 0 0; padding: 14px 16px; border-radius: 14px; background: rgba(147, 214, 196, 0.12); border: 1px solid rgba(147, 214, 196, 0.4); }
+    .ready p { margin: 0; color: var(--text); }
+    .ready[hidden] { display: none; }
     .status { font-size: 14px; font-weight: 700; margin: 4px 2px 0; min-height: 1.4em; }
     .status.ok { color: var(--good); }
     .status.bad { color: var(--warn); }
@@ -88,6 +98,8 @@
       </div>
     </header>
 
+    <div class="ready" id="alreadySetUp" hidden><span>✅</span><p><strong>This site is already connected to Google.</strong> You don't need to do any of this: just use <strong>Save to Drive</strong> or <strong>Connect</strong> in Lofi Focus. This guide is for people hosting their own copy.</p></div>
+
     <nav class="toc" aria-label="Steps">
       <a href="#project"><b>1</b>Create the project</a>
       <a href="#branding"><b>2</b>Branding</a>
@@ -113,16 +125,16 @@
       <div class="num">2</div>
       <h2>Fill in Branding</h2>
       <p class="where">Google Auth Platform → <span>Branding</span></p>
-      <p>This is what people see on Google's sign-in screen. Fill in every field below, then click <strong>Save at the very bottom</strong> of the page.</p>
+      <p>This is what people see on Google's sign-in screen. Fill in each field exactly as shown, then click <strong>Save at the very bottom</strong> of the page.</p>
       <table>
-        <tr><th>App name</th><td>Anything without the word “Google” in it, e.g. <code>Lofi Focus</code></td></tr>
-        <tr><th>User support email</th><td>Choose your address from the dropdown</td></tr>
-        <tr><th>App logo</th><td><strong>Leave empty.</strong> Uploading a logo means Google has to review your app before it can be published.</td></tr>
-        <tr><th>Application home page</th><td><code class="fill-home">https://your-site</code></td></tr>
-        <tr><th>Privacy policy link</th><td><code class="fill-privacy">https://your-site/privacy.html</code>. This page comes with Lofi Focus.</td></tr>
-        <tr><th>Terms of service link</th><td>Leave empty</td></tr>
-        <tr><th>Authorized domains</th><td>Your domain without <code>https://</code>, e.g. <code class="fill-domain">example.com</code> or <code>yourname.github.io</code>. <strong>Press Enter</strong> so it turns into a chip.</td></tr>
-        <tr><th>Developer contact</th><td>Your email address</td></tr>
+        <tr><th>App name</th><td><div class="enter"><code>Lofi Focus</code><button type="button" class="copy">Copy</button></div></td></tr>
+        <tr><th>User support email</th><td>Click the box and <strong>pick your own email address</strong> from the list that appears.</td></tr>
+        <tr><th>App logo</th><td><strong>Don't upload anything.</strong> A logo means Google has to review your app before it can be published.</td></tr>
+        <tr><th>Application home page</th><td><div class="enter"><code class="fill-home">https://your-site</code><button type="button" class="copy">Copy</button></div></td></tr>
+        <tr><th>Application privacy policy link</th><td><div class="enter"><code class="fill-privacy">https://your-site/privacy.html</code><button type="button" class="copy">Copy</button></div><span class="how">This page comes with Lofi Focus.</span></td></tr>
+        <tr><th>Application terms of service link</th><td>Leave empty.</td></tr>
+        <tr><th>Authorized domains</th><td>Click <strong>+ Add domain</strong>, paste this, and <strong>press Enter</strong>:<div class="enter"><code class="fill-domain">your-domain.com</code><button type="button" class="copy">Copy</button></div></td></tr>
+        <tr><th>Developer contact information</th><td>Type <strong>your own email address</strong> and press Enter.</td></tr>
       </table>
       <div class="callout warn"><span>⚠️</span><p>If publishing later says “you must complete your configuration on the Branding page”, one of these is missing (usually the privacy policy link), a logo is uploaded, or the page wasn't saved.</p></div>
     </section>
@@ -160,24 +172,27 @@
     <section class="step" id="client">
       <div class="num">5</div>
       <h2>Create the Web client</h2>
-      <p class="where">Google Auth Platform → <span>Clients</span> → Create client</p>
-      <ol>
-        <li>Application type: <strong>Web application</strong>. Give it any name.</li>
-        <li>Under <strong>Authorized JavaScript origins</strong>, click <strong>Add URI</strong> and paste this site's address, exactly as shown:
-          <div class="tool"><code id="origin">…</code><button type="button" class="copy" data-copy="origin">Copy</button></div>
-          Add each other address you open Lofi Focus from too, for example <code>http://localhost:8080</code> for testing on your computer, or both your custom domain and <code>https://yourname.github.io</code>.
-        </li>
-        <li>Leave <strong>Authorized redirect URIs</strong> empty. Lofi Focus signs in with a Google popup.</li>
-        <li>Click <strong>Create</strong> and copy the <strong>Client ID</strong>. It ends in <code>.apps.googleusercontent.com</code>.</li>
+      <p class="where">Google Auth Platform → <span>Clients</span></p>
+      <ol class="steps">
+        <li>Click <strong>+ Create client</strong> at the top of the page.</li>
+        <li><strong>Application type:</strong> open the dropdown and choose <strong>Web application</strong>.</li>
+        <li><strong>Name:</strong> enter
+          <div class="enter"><code>Lofi Focus web</code><button type="button" class="copy">Copy</button></div></li>
+        <li>Under <strong>Authorized JavaScript origins</strong>, click <strong>+ Add URI</strong> and paste this site's address:
+          <div class="enter"><code id="origin">…</code><button type="button" class="copy">Copy</button></div>
+          <span class="how">Paste it exactly: starting with <code class="fill-proto">https://</code>, with nothing after it, and <strong>no</strong> slash at the end.</span></li>
+        <li><strong>Authorized redirect URIs:</strong> don't add anything. Leave it empty.</li>
+        <li>Click <strong>Create</strong>. A box titled <em>OAuth client created</em> appears. Click the copy icon next to <strong>Client ID</strong>.
+          <span class="how">It looks like <code>123456789012-a1b2c3d4e5f6.apps.googleusercontent.com</code>. Don't use the <em>Client secret</em>; Lofi Focus never needs it.</span></li>
       </ol>
-      <div class="callout tip"><span>💡</span><p>Origins must match character for character: <code>https</code> vs <code>http</code>, the port number, and no slash at the end. <code>localhost</code> and <code>127.0.0.1</code> count as different addresses. Changes can take up to 5 minutes to work.</p></div>
+      <div class="callout tip"><span>💡</span><p><strong>Also running Lofi Focus on your own computer?</strong> Repeat the <em>+ Add URI</em> step with <code>http://localhost:8080</code> (use your real port if it's different). Google treats every address separately, and changes can take up to 5 minutes to work.</p></div>
     </section>
 
     <section class="step" id="paste">
       <div class="num">6</div>
       <h2>Paste your Client ID</h2>
       <p class="where">Here, or in Lofi Focus → Settings → Google → Google setup</p>
-      <div class="tool"><input id="clientId" placeholder="123456789012-abc….apps.googleusercontent.com" autocomplete="off" spellcheck="false" aria-label="Google OAuth Client ID"><button type="button" id="saveId">Save</button></div>
+      <div class="tool"><input id="clientId" placeholder="example.apps.googleusercontent.com" autocomplete="off" spellcheck="false" aria-label="Google OAuth Client ID"><button type="button" id="saveId">Save</button></div>
       <p class="status" id="idStatus"></p>
       <p>This saves it for this browser. To make it work for everyone who uses your copy, put it in <code>js/config.js</code> as <code>googleClientId: '…'</code> instead.</p>
       <p>Then go back to Lofi Focus and try <strong>Settings → Save to Drive</strong>, or <strong>Connect</strong> in the Calendar. You can take back access any time at <a href="https://myaccount.google.com/permissions" target="_blank" rel="noopener">myaccount.google.com/permissions</a>.</p>
@@ -215,6 +230,7 @@
     <footer>Lofi Focus only uses your Google data to show it to you and save your own things back to your account. <a href="privacy.html">Privacy policy</a></footer>
   </main>
 
+  <script src="js/config.js"></script>
   <script>
     (function () {
       'use strict';
@@ -223,6 +239,7 @@
       const isWeb = /^https?:$/.test(location.protocol);
       const domain = host.split('.').slice(-2).join('.'); // e.g. lofi.example.com -> example.com (github.io sites: use yourname.github.io)
       document.getElementById('origin').textContent = isWeb ? origin : 'Open this page from your site (not as a file) to see its address';
+      if (isWeb) document.querySelectorAll('.fill-proto').forEach((e) => { e.textContent = location.protocol + '//'; });
       if (isWeb && host !== 'localhost' && host !== '127.0.0.1') {
         document.querySelectorAll('.fill-home').forEach((e) => { e.textContent = origin; });
         document.querySelectorAll('.fill-privacy').forEach((e) => { e.textContent = origin + '/privacy.html'; });
@@ -231,14 +248,19 @@
       }
 
       document.querySelectorAll('button.copy').forEach((b) => b.addEventListener('click', async () => {
-        const text = document.getElementById(b.dataset.copy).textContent;
+        const text = b.parentElement.querySelector('code').textContent.trim();
         try { await navigator.clipboard.writeText(text); b.textContent = 'Copied ✓'; } catch (e) { b.textContent = 'Select & copy'; }
         setTimeout(() => { b.textContent = 'Copy'; }, 1800);
       }));
 
       // Save the Client ID where the app reads it (same key as Settings → Google setup).
       const KEY = 'lofi.googleClientId', input = document.getElementById('clientId'), status = document.getElementById('idStatus');
-      try { input.value = JSON.parse(localStorage.getItem(KEY) || '""'); } catch (e) { /* ignore */ }
+      // Don't show a saved ID on the page; just say one is there.
+      try {
+        const saved = JSON.parse(localStorage.getItem(KEY) || '""');
+        if (saved) { status.className = 'status ok'; status.textContent = `A Client ID is already saved in this browser (ending …${saved.split('.')[0].slice(-4)}). Paste a new one to replace it.`; }
+      } catch (e) { /* ignore */ }
+      if (window.Lofi && Lofi.config && Lofi.config.googleClientId) document.getElementById('alreadySetUp').hidden = false;
       document.getElementById('saveId').addEventListener('click', () => {
         const v = input.value.trim().replace(/^['"]|['"]$/g, '');
         input.value = v;
@@ -250,8 +272,9 @@
         }
         try {
           localStorage.setItem(KEY, JSON.stringify(v));
+          input.value = '';
           status.className = 'status ok';
-          status.textContent = 'Saved ✓ Go back to Lofi Focus (reload it if it’s open in another tab).';
+          status.textContent = `Saved ✓ (ending …${v.split('.')[0].slice(-4)}). Go back to Lofi Focus, and reload it if it’s open in another tab.`;
         } catch (e) {
           status.className = 'status bad';
           status.textContent = 'Couldn’t save in this browser. Paste it into Settings → Google in the app instead.';
