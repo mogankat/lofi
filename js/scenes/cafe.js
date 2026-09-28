@@ -2,7 +2,7 @@
 (function () {
   'use strict';
   const K = window.Lofi.sceneKit;
-  const { TAU, PHASES, rng, rect, circle, ellipse, rrect, poly, line, vgrad, glow, pool, vignette, shade, sky, makeStars, stars, sunOrMoon, makeFlock, flock, makeLayer, lookOf, outfit, FRIEND, drawPet, perchBird, owl, backFigure, steam } = K;
+  const { TAU, PHASES, rng, rect, circle, ellipse, rrect, poly, line, vgrad, glow, pool, vignette, shade, sky, makeStars, stars, sunOrMoon, makeFlock, flock, makeLayer, lookOf, gear, outfit, FRIEND, drawPet, perchBird, owl, backFigure, legs, steam } = K;
   const { sin, round, random } = Math;
 
   const CAFE = {
@@ -41,7 +41,10 @@
       const shops = [];
       for (let x = win.x - 20; x < win.x + win.w + 20;) {
         const w = 56 + ((r() * 34) | 0), h = 72 + ((r() * 34) | 0);
-        shops.push({ x, w, h, face: (r() * 4) | 0, awning: AWNING[(r() * 4) | 0], ups: Array.from({ length: 6 }, () => r()) });
+        // Each upstairs window has its own slow on/off rhythm, like people moving
+        // between rooms; a few have a TV flickering.
+        const ups = Array.from({ length: 6 }, () => ({ p: r() * TAU, s: 0.03 + r() * 0.12, bias: r() * 0.9 - 0.3, tv: r() < 0.15 }));
+        shops.push({ x, w, h, face: (r() * 4) | 0, awning: AWNING[(r() * 4) | 0], ups });
         x += w + 2;
       }
       const starList = makeStars(r, 30, win.x, win.w, win.y, 20);
@@ -58,8 +61,10 @@
           rect(c, s.x, top, s.w, 3, shade(C.facade[s.face], -0.15)); // cornice
           for (let i = 0; i < 6; i++) { // upper windows
             const wx = s.x + 8 + (i % 3) * ((s.w - 16) / 3), wy = top + 10 + ((i / 3) | 0) * 18;
-            const lit = lights > 0.3 && s.ups[i] < 0.55;
-            rect(c, wx, wy, 9, 11, lit ? `rgba(255,214,140,${0.5 + 0.5 * lights})` : C.up);
+            const u = s.ups[i], lit = lights > 0.3 && sin(t * u.s + u.p) + sin(t * u.s * 2.7 + u.p * 3) * 0.4 > u.bias;
+            if (!lit) rect(c, wx, wy, 9, 11, C.up);
+            else if (u.tv) rect(c, wx, wy, 9, 11, `rgba(${150 + 40 * sin(t * 7 + u.p)},${170 + 30 * sin(t * 5.3 + u.p)},255,${0.55 + 0.25 * sin(t * 11 + u.p) * sin(t * 3.1)})`);
+            else rect(c, wx, wy, 9, 11, `rgba(255,214,140,${0.5 + 0.5 * lights})`);
             rect(c, wx, wy + 11, 9, 1, C.trim);
           }
           const shopTop = street.shops - 30;
@@ -145,9 +150,10 @@
           // glass reflections + lettering
           c.fillStyle = 'rgba(255,255,255,0.05)';
           for (const x0 of [win.x + 40, win.x + 190, win.x + 320]) poly(c, [x0, win.y, x0 + 26, win.y, x0 - 34, base, x0 - 60, base], 'rgba(255,255,255,0.045)');
-          c.save(); c.translate(cx, win.y + 58); c.scale(-1, 1);
-          c.font = 'bold 13px Georgia, serif'; c.textAlign = 'center'; c.fillStyle = 'rgba(240,200,120,0.55)';
-          c.fillText('CAFÉ', 0, 0);
+          c.save(); c.translate(cx, win.y + 25); c.scale(-1, 1); // painted on the glass, so we see it backwards
+          c.font = 'bold 13px Georgia, serif'; c.textAlign = 'center';
+          c.lineWidth = 3; c.strokeStyle = 'rgba(40,24,16,0.75)'; c.strokeText('CAFÉ', 0, 0);
+          c.fillStyle = 'rgba(245,205,125,0.9)'; c.fillText('CAFÉ', 0, 0);
           c.restore();
           c.restore();
 
@@ -169,14 +175,14 @@
             rect(f, px - 7, base - 12, 14, 12, '#c8795a'); rect(f, px - 8, base - 13, 16, 2, '#d88a6a');
             for (let i = 0; i < 6; i++) { const a = -Math.PI / 2 + (i - 2.5) * 0.45 + sin(t * 0.7 + i + px) * 0.05; ellipse(f, px + Math.cos(a) * 10, base - 16 + sin(a) * 10, 6, 2.2, i % 2 ? '#5f8f5a' : '#4c7a4c', a); }
           }
-          if (lk.pet === 'cat') drawPet(f, lk, cx - 120, base, t); // on the counter, people-watching
+          if (lk.pet === 'cat') drawPet(f, lk, cx - 82, base, t); // on the counter, people-watching
           // latte + croissant
           const mx = cx + 42;
           ellipse(f, mx, base - 1, 9, 2, '#f0ebe4');
           rrect(f, mx - 6, base - 11, 12, 10, 3, '#f4efe8'); rect(f, mx - 5, base - 11, 10, 2, '#b88a5a');
           f.strokeStyle = '#f4efe8'; f.lineWidth = 2; f.beginPath(); f.arc(mx + 7, base - 6, 2.5, -1.4, 1.4); f.stroke();
-          ellipse(f, cx - 46, base - 1, 10, 2, '#f0ebe4');
-          ellipse(f, cx - 46, base - 5, 8, 4, '#d8983f'); ellipse(f, cx - 46, base - 6, 5, 2.5, '#e8b060');
+          ellipse(f, cx - 44, base - 1, 10, 2, '#f0ebe4');
+          ellipse(f, cx - 44, base - 5, 8, 4, '#d8983f'); ellipse(f, cx - 44, base - 6, 5, 2.5, '#e8b060');
           // pendant lamps
           for (const lx of [cx - 130, cx, cx + 130]) {
             line(f, [lx, 0, lx, 20], '#1e1a18', 1);
@@ -185,14 +191,17 @@
           }
           // stools + people
           const stool = lk.furniture || '#7a4a30';
-          const seat = (x) => { rrect(f, x - 20, 226, 40, 7, 3, stool); rect(f, x - 3, 233, 6, 37, '#2a2830'); rect(f, x - 15, 252, 30, 2, '#2a2830'); };
+          const seat = (x, pants) => {
+            legs(f, x, 230, 19, { pants }); // shins down to the footrest, behind the stool's post
+            rrect(f, x - 20, 226, 40, 7, 3, stool); rect(f, x - 3, 233, 6, 37, '#2a2830'); rect(f, x - 15, 252, 30, 2, '#2a2830');
+          };
           if (lk.friend) {
-            seat(cx + 92);
+            seat(cx + 92, FRIEND.pants);
             backFigure(f, cx + 92, 160, { t, torso: 68, top: FRIEND.top, shade: FRIEND.shade, hair: FRIEND.hair, longHair: true, rim: P.rim, bob: sin(t * 1.1 + 2) * 0.5 });
           }
-          seat(cx);
+          seat(cx, '#3a3a55');
           backFigure(f, cx, 158, {
-            t, torso: 70, top: fit.top, shade: fit.shade, hair: lk.hair || '#3a2420', phones: lk.accent || null,
+            t, torso: 70, top: fit.top, shade: fit.shade, hair: lk.hair || '#3a2420', phones: gear(lk, '#e8e0d0'),
             rim: P.rim, bob: sin(t * 1.2) * 0.6, armL: sin(t * 0.5) > 0.7 ? -3 : 0,
           });
           if (lk.pet === 'dog') drawPet(f, lk, cx - 48, 270, t); // on the floor by the stool

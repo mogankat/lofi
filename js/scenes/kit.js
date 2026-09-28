@@ -206,8 +206,10 @@
 
   // ---------- customisation (env.look) ----------
   // Colours are optional overrides; null means "use the scene's own colour".
-  const DEFAULT_LOOK = { outfit: null, hair: null, accent: null, furniture: null, tent: null, pet: 'cat', petColor: null, friend: false };
+  const DEFAULT_LOOK = { outfit: null, hair: null, gear: true, accent: null, furniture: null, tent: null, pet: 'cat', petColor: null, friend: false };
   const lookOf = (env) => ({ ...DEFAULT_LOOK, ...(env.look || {}) });
+  // Headphones (or the campfire beanie): null when switched off.
+  const gear = (lk, def) => (lk.gear === false ? null : lk.accent || def);
   const outfit = (lk, def) => ({ top: lk.outfit || def, shade: shade(lk.outfit || def, -0.25) });
   const PET_COLOR = { cat: '#3b3450', dog: '#b07a4a' };
   const FRIEND = { top: '#6f8fb8', shade: '#56729a', hair: '#231c24', skin: '#c98f68', pants: '#35354a' };
@@ -339,6 +341,6 @@
   window.Lofi.sceneKit = {
     TAU, PI, PHASES, rng, rect, circle, ellipse, rrect, poly, line, vgrad, glow, pool, vignette, ridge, shade,
     sky, makeStars, stars, moon, sunOrMoon, makeClouds, clouds, makeFlies, fireflies, fliesLevel, makeFlock, flock,
-    makeLayer, lookOf, outfit, FRIEND, drawPet, perchBird, owl, backFigure, legs, flames, steam,
+    makeLayer, lookOf, gear, outfit, FRIEND, drawPet, perchBird, owl, backFigure, legs, flames, steam,
   };
 })();
