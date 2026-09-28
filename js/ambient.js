@@ -23,7 +23,7 @@
   const vols = L.store.load('ambient', {});
   let master = L.store.load('ambientMaster', 0.8);
   const MAKEUP = 2;
-  let ctx = null, out = null, unlocked = false;
+  let ctx = null, out = null, unlocked = false, night = false;
   const buffers = {}, channels = {};
 
   const rnd = (a, b) => a + Math.random() * (b - a);
@@ -189,6 +189,34 @@
     }
   }
 
+  // Owl at night: soft falling "hoo"s in a great-horned-owl rhythm
+  // (hoo … hoo-hoo … hoo … hoo), sometimes answered by a second owl.
+  function hootPhrase(o, t, far = 1) {
+    const f0 = rnd(330, 420) * (far < 1 ? 0.9 : 1);
+    const pg = gain(rnd(0.2, 0.35) * far);
+    chain(pg, filt('lowpass', 900), pan(rnd(-0.8, 0.8)), o);
+    const pattern = Math.random() < 0.6 ? [0.45, 0.2, 0.2, 0.5, 0.55] : [0.55, 0.6];
+    let tt = t;
+    pattern.forEach((d, i) => {
+      const f = f0 * rnd(0.97, 1.02), osc = ctx.createOscillator(), g = gain(0);
+      osc.frequency.setValueAtTime(f * 1.05, tt);
+      osc.frequency.exponentialRampToValueAtTime(f * 0.9, tt + d);
+      g.gain.setValueAtTime(0, tt);
+      g.gain.linearRampToValueAtTime(1, tt + d * 0.3);
+      g.gain.linearRampToValueAtTime(0.7, tt + d * 0.7);
+      g.gain.linearRampToValueAtTime(0, tt + d);
+      chain(osc, g, pg);
+      osc.start(tt); osc.stop(tt + d + 0.05);
+      const breath = gain(0); // a little breathiness
+      chain(noise('pink', tt, d + 0.05), filt('bandpass', f * 1.5, 2), breath, pg);
+      breath.gain.setValueAtTime(0, tt);
+      breath.gain.linearRampToValueAtTime(0.15, tt + d * 0.3);
+      breath.gain.linearRampToValueAtTime(0, tt + d);
+      tt += d + (i === 0 ? 0.35 : 0.15);
+    });
+    return tt - t;
+  }
+
   function chirp(o, t, b) {
     const osc = ctx.createOscillator(), g = gain(0);
     osc.frequency.value = b.f;
@@ -309,7 +337,13 @@
       return { srcs, tick: (now, until) => { voices.forEach((v) => v.tick(now, until)); clink(now, until); } };
     },
 
-    birds: (o) => ({ srcs: [], tick: ticker((t) => { birdPhrase(o, t); return rnd(1.2, 6); }) }),
+    // Songbirds by day; owls at night (the app calls setNight with the scene lighting).
+    birds: (o) => ({ srcs: [], tick: ticker((t) => {
+      if (!night) { birdPhrase(o, t); return rnd(1.2, 6); }
+      const len = hootPhrase(o, t);
+      if (Math.random() < 0.3) hootPhrase(o, t + len + rnd(1.5, 3), 0.6); // an owl further off answers
+      return len + rnd(6, 13);
+    }) }),
 
     crickets(o) {
       const ticks = Array.from({ length: 4 }, () => {
@@ -366,6 +400,7 @@
   };
 
   A.getVolume = (id) => vols[id] || 0;
+  A.setNight = (v) => { night = !!v; };
   A.setVolume = function (id, v) {
     vols[id] = v;
     L.store.save('ambient', vols);

@@ -2,7 +2,7 @@
 (function () {
   'use strict';
   const K = window.Lofi.sceneKit;
-  const { TAU, PHASES, rng, rect, rrect, poly, line, vgrad, glow, vignette, sky, stars, sunOrMoon, makeLayer, lookOf, outfit, FRIEND, drawPet, perchBird, owl, backFigure, legs } = K;
+  const { TAU, PHASES, rng, rect, rrect, poly, line, vgrad, glow, vignette, sky, stars, sunOrMoon, makeLayer, lookOf, gear, outfit, FRIEND, drawPet, perchBird, owl, backFigure, legs } = K;
   const { sin, cos, abs, max, min, round, pow } = Math;
 
   const SEA = {
@@ -133,7 +133,7 @@
           }
           drawPet(f, lk, lk.friend ? cx - 100 : cx - 44, 216, t);
           backFigure(f, cx + 14, 190, {
-            t, torso: 26, top: fit.top, shade: fit.shade, hair: lk.hair || '#4a2e28', phones: lk.accent || null, wind,
+            t, torso: 26, top: fit.top, shade: fit.shade, hair: lk.hair || '#4a2e28', phones: gear(lk, '#3a3548'), wind,
             rim, bob: sin(t * 0.9) * 0.5,
           });
           later.push(fishing(f, cx + 30, 210, cx + 80, 150 + sin(t * 0.9) * 1.5, cx + 104, 246 + sin(t * 1.6) * 0.8, t));

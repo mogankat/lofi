@@ -2,7 +2,7 @@
 (function () {
   'use strict';
   const K = window.Lofi.sceneKit;
-  const { TAU, PI, PHASES, rng, rect, circle, ellipse, rrect, poly, line, vgrad, glow, pool, vignette, ridge, shade, sky, stars, sunOrMoon, makeClouds, clouds, makeFlies, fireflies, fliesLevel, makeFlock, flock, makeLayer, lookOf, FRIEND, drawPet, perchBird, owl, flames } = K;
+  const { TAU, PI, PHASES, rng, rect, circle, ellipse, rrect, poly, line, vgrad, glow, pool, vignette, ridge, shade, sky, stars, sunOrMoon, makeClouds, clouds, makeFlies, fireflies, fliesLevel, makeFlock, flock, makeLayer, lookOf, gear, FRIEND, drawPet, perchBird, owl, flames } = K;
   const { sin, cos, abs, min, round, random } = Math;
 
   const CAMP = {
@@ -120,7 +120,7 @@
           for (const a of [0.28, -0.28]) { f.save(); f.translate(fx, fy - 2); f.rotate(a); rect(f, -18, -2.5, 36, 5, '#4d2e1d'); f.restore(); }
           rect(f, gx - 26, 222, 52, 9, '#5a3a26');
           ellipse(f, gx + 26, 226.5, 3, 4.5, '#7a5236');
-          guitarist(f, gx, 222, t, { skin: '#f1c7a3', sweater: lk.outfit || '#6f8fb8', hair: lk.hair || '#3a2420', hat: lk.accent || '#c9574a' });
+          guitarist(f, gx, 222, t, { skin: '#f1c7a3', sweater: lk.outfit || '#6f8fb8', hair: lk.hair || '#3a2420', hat: gear(lk, '#c9574a') });
           if (lk.friend) { // on a stump, jamming along
             const sx = cx - 68;
             rect(f, sx - 12, 222, 24, 10, '#6a4a30'); ellipse(f, sx, 222, 12, 3, '#8a6848');

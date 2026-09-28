@@ -16,6 +16,7 @@ No accounts, no paywall, no tracking, no build step. It's just static files.
 - **Ambient sounds**: rain, thunder, wind, ocean waves, fireplace, café, birds, crickets, and
   white, pink and brown noise. Each one is **synthesised live in the browser**, so there are no
   audio files and no loops you can hear repeating. Mix them with sliders or pick a preset.
+  At night, bird sounds become owl hoots.
 - **To-do lists**: as many lists as you like. Drag tasks into priority order, check them off,
   or press ◎ to send a task to the timer.
 - **Habits**: a numbered list you can drag into priority order, with a checkbox for each day of
@@ -29,12 +30,14 @@ No accounts, no paywall, no tracking, no build step. It's just static files.
   Optionally shows your **Google Calendar** events, and can log finished focus sessions to it.
 - **Animated scenes**: study desk, café window, fireside, park bench, campfire guitar and
   fishing dock. Each has **Morning, Afternoon, Evening and Night** lighting, or **Auto** to
-  follow your clock.
+  follow your clock. On a phone held upright you still see the whole scene: the wall or sky
+  above and the floor below are extended to fill the screen, instead of the sides being cut off.
 - **Sounds you can see** (optional): rain falls on screen or on the window, thunder flashes,
   wind blows leaves and sways trees and curtains, bird sounds bring out birds (owls at night),
   and crickets bring fireflies after dark.
-- **Customize** (palette button): outfit, hair, headphones/hat, furniture and tent colours; a cat
-  or dog; and a friend who joins you in every scene except the study desk.
+- **Customize** (palette button): outfit and hair colours; headphones/hat on or off, and their
+  colour; furniture and tent colours; a cat or dog; and a friend who joins you in every scene
+  except the study desk.
 - **Clock** with 12- or 24-hour time, which you can move anywhere on screen. It can also show
   the **local temperature** in °F, °C or both, from [Open-Meteo](https://open-meteo.com), which
   is free and needs no API key. You can use your browser location or type a city.

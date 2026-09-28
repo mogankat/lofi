@@ -2,7 +2,7 @@
 (function () {
   'use strict';
   const K = window.Lofi.sceneKit;
-  const { TAU, PHASES, rng, rect, circle, line, vgrad, glow, pool, vignette, ridge, sky, makeStars, stars, sunOrMoon, makeClouds, clouds, makeFlies, fireflies, fliesLevel, makeFlock, flock, makeLayer, lookOf, outfit, FRIEND, drawPet, perchBird, owl, backFigure, legs } = K;
+  const { TAU, PHASES, rng, rect, circle, line, vgrad, glow, pool, vignette, ridge, sky, makeStars, stars, sunOrMoon, makeClouds, clouds, makeFlies, fireflies, fliesLevel, makeFlock, flock, makeLayer, lookOf, gear, outfit, FRIEND, drawPet, perchBird, owl, backFigure, legs } = K;
   const { sin, cos, abs, round, random } = Math;
 
   const LEAF = ['#e07a3f', '#e3a33b', '#c4543a', '#f0c05a'];
@@ -86,7 +86,7 @@
           if (lk.friend) backFigure(f, bx + 24, 186, { t, torso: 30, top: FRIEND.top, shade: FRIEND.shade, hair: FRIEND.hair, rim: P.rim, bob: sin(t * 1.1 + 2) * 0.6 });
           backFigure(f, me, 184, {
             t, torso: 32, top: fit.top, shade: fit.shade, hair: lk.hair || '#4a2c2a', longHair: true, wind,
-            phones: lk.accent || '#3a3548', rim: P.rim, bob: sin(t * 1.3) * 0.6,
+            phones: gear(lk, '#3a3548'), rim: P.rim, bob: sin(t * 1.3) * 0.6,
           });
           const slat = K.shade(pal, 0.08), slatDark = K.shade(pal, -0.2);
           rect(f, bx - 48, 192, 96, 5, slat); rect(f, bx - 48, 196, 96, 1, slatDark);

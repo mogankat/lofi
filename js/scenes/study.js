@@ -2,7 +2,7 @@
 (function () {
   'use strict';
   const K = window.Lofi.sceneKit;
-  const { TAU, PI, PHASES, rng, rect, circle, ellipse, rrect, poly, line, vgrad, glow, pool, vignette, shade, sky, makeStars, stars, moon, sunOrMoon, makeLayer, lookOf, outfit, drawPet, perchBird, owl, backFigure, steam, makeFlock, flock } = K;
+  const { TAU, PI, PHASES, rng, rect, circle, ellipse, rrect, poly, line, vgrad, glow, pool, vignette, shade, sky, makeStars, stars, moon, sunOrMoon, makeLayer, lookOf, gear, outfit, drawPet, perchBird, owl, backFigure, steam, makeFlock, flock } = K;
   const { sin, cos, round } = Math;
 
   const BULBS = [['#ffd27f', [255, 210, 127]], ['#ff9d8a', [255, 157, 138]], ['#9fd3ff', [159, 211, 255]], ['#c6f2a4', [198, 242, 164]]];
@@ -142,15 +142,15 @@
 
           // ---- objects layer ----
           const f = layer.begin(W, H);
-          if (lk.pet === 'cat') drawPet(f, lk, win.x + 44, base + 3, t, R.cat); // on the sill, watching the city
-          const bx = cx - 168;
+          if (lk.pet === 'cat') drawPet(f, lk, cx - 96, base + 3, t, R.cat); // on the sill, watching the city
+          const bx = cx - 148;
           rect(f, bx - 16, dy - 6, 32, 6, '#7c4a5c'); rect(f, bx - 14, dy - 11, 28, 5, '#46708a'); rect(f, bx - 15, dy - 17, 30, 6, '#b08a4c');
           rect(f, bx + 14, dy - 5, 1, 4, '#e8dcc4'); rect(f, bx + 13, dy - 10, 1, 3, '#e8dcc4');
-          const gx = cx - 112;
+          const gx = cx - 62;
           rect(f, gx - 5, dy - 12, 10, 12, '#e9d9bd');
           rect(f, gx - 5, dy - 12, 10, 2, '#d4c2a2');
           f.strokeStyle = '#e9d9bd'; f.lineWidth = 2; f.beginPath(); f.arc(gx + 6, dy - 6, 3, -PI / 2, PI / 2); f.stroke();
-          const px = cx + 170;
+          const px = cx + 152;
           poly(f, [px - 9, dy - 14, px + 9, dy - 14, px + 7, dy, px - 7, dy], '#b5654a');
           rect(f, px - 10, dy - 16, 20, 3, '#c97a5c');
           for (let i = 0; i < 7; i++) {
@@ -162,7 +162,7 @@
           f.fillRect(cx - 33, dy - 37, 66, 34);
           rect(f, cx - 40, dy - 2, 80, 3, '#9a9aaa');
           backFigure(f, cx, 180, {
-            t, torso: 74, top: fit.top, shade: fit.shade, hair: lk.hair || '#2b1d2a', phones: lk.accent || '#d9d2ea',
+            t, torso: 74, top: fit.top, shade: fit.shade, hair: lk.hair || '#2b1d2a', phones: gear(lk, '#d9d2ea'),
             rim: P.moon ? 'rgba(170,200,255,0.6)' : P.rim, bob: sin(t * TAU * 75 / 60) * 0.8,
             armL: round(sin(t * 9) * 0.8), armR: round(sin(t * 9 + 1.7) * 0.8),
           });

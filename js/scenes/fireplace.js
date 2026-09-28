@@ -25,6 +25,46 @@
   };
   const BOOKS = ['#8a4a4a', '#3f6f8f', '#c8a060', '#5a8a5a', '#7a5a9a', '#d8c8a8', '#a86a3a', '#4a5a7a'];
 
+  // Painting of autumn woods: warm sky, trees in reds and golds, a leafy path.
+  const AUTUMN = ['#d9642c', '#e8963a', '#c0442e', '#f0bf52', '#b85a2a'];
+  function makePainting(r) {
+    const trees = Array.from({ length: 8 }, (_, i) => ({
+      x: 0.06 + i * 0.125 + (r() - 0.5) * 0.05, w: 1 + ((r() * 2) | 0), top: 0.3 + r() * 0.15,
+      blobs: Array.from({ length: 4 }, () => ({ dx: (r() - 0.5) * 12, dy: r() * 10, r: 3 + r() * 3.5, col: AUTUMN[(r() * AUTUMN.length) | 0] })),
+    }));
+    const flecks = Array.from({ length: 26 }, () => ({ x: r(), y: 0.8 + r() * 0.2, col: AUTUMN[(r() * AUTUMN.length) | 0] }));
+    return { trees, flecks };
+  }
+  function drawPainting(c, P, x, y, w, h) {
+    rect(c, x - 4, y - 4, w + 8, h + 8, '#8a6a3a'); rect(c, x - 2, y - 2, w + 4, h + 4, '#6a4e28');
+    c.save(); c.beginPath(); c.rect(x, y, w, h); c.clip();
+    c.fillStyle = vgrad(c, y, y + h, [[0, '#f6dcae'], [1, '#e8a878']]); c.fillRect(x, y, w, h);
+    for (let i = 0; i < 12; i++) circle(c, x + i * 8, y + h * 0.55, 6, '#d0946a'); // distant trees
+    rect(c, x, y + h * 0.78, w, h * 0.22, '#9a5a2e');
+    poly(c, [x + w * 0.42, y + h, x + w * 0.58, y + h, x + w * 0.52, y + h * 0.78, x + w * 0.49, y + h * 0.78], '#c8905e'); // path
+    for (const f of P.flecks) rect(c, x + f.x * w, y + f.y * h, 1, 1, f.col);
+    for (const tr of P.trees) {
+      const tx = x + tr.x * w;
+      rect(c, tx, y + h * tr.top, tr.w, h * (0.8 - tr.top), '#4a3024');
+      for (const b of tr.blobs) circle(c, tx + b.dx, y + h * tr.top + b.dy, b.r, b.col);
+    }
+    c.restore();
+  }
+
+  // Small mantel clock whose hands show the real time.
+  function mantelClock(c, x, y) {
+    const now = new Date(), cx0 = x, cy0 = y;
+    rrect(c, x - 10, y - 10, 20, 19, 4, '#b8904e'); rect(c, x - 11, y + 8, 22, 2, '#8a6a3a');
+    circle(c, cx0, cy0, 6.8, '#f4efe4');
+    for (let i = 0; i < 4; i++) { const a = (i * Math.PI) / 2; rect(c, cx0 + Math.cos(a) * 5.4 - 0.5, cy0 + Math.sin(a) * 5.4 - 0.5, 1, 1, '#6a5a4a'); }
+    const m = now.getMinutes() + now.getSeconds() / 60, h = (now.getHours() % 12) + m / 60;
+    const hand = (frac, len, w, col) => { const a = frac * Math.PI * 2 - Math.PI / 2; line(c, [cx0, cy0, cx0 + Math.cos(a) * len, cy0 + Math.sin(a) * len], col, w); };
+    hand(h / 12, 3.6, 1.3, '#2a2020');
+    hand(m / 60, 5.3, 0.9, '#2a2020');
+    hand(now.getSeconds() / 60, 5.6, 0.5, '#c0443a');
+    circle(c, cx0, cy0, 0.9, '#2a2020');
+  }
+
   // Wingback armchair seen from behind; the person's head shows above it.
   function armchair(c, x, col) {
     const dark = shade(col, -0.3), light = shade(col, 0.12);
@@ -42,6 +82,7 @@
       const win = { x: cx - 238, y: 42, w: 78, h: 104 };
       const starList = makeStars(r, 16, win.x, win.w, win.y, 50);
       const shelf = { x: cx + 152, y: 40, w: 80, h: floorY - 40 };
+      const painting = makePainting(r);
       const books = [];
       for (let row = 0; row < 4; row++) {
         let x = shelf.x + 5;
@@ -111,10 +152,7 @@
           c.fillStyle = '#1a1210';
           c.beginPath(); c.moveTo(fx - 50, floorY); c.lineTo(fx - 50, 140); c.quadraticCurveTo(fx, 112, fx + 50, 140); c.lineTo(fx + 50, floorY); c.fill();
           rect(c, fx - 96, floorY - 4, 192, 8, shade(M.stone, 0.12));
-          // painting above the mantel
-          rect(c, fx - 46, 22, 92, 50, '#8a6a3a'); rect(c, fx - 42, 26, 84, 42, '#9ab0c0');
-          poly(c, [fx - 42, 68, fx - 20, 44, fx, 60, fx + 18, 40, fx + 42, 62, fx + 42, 68], '#6a8a6a');
-          circle(c, fx + 24, 36, 4, '#f4e0a8');
+          drawPainting(c, painting, fx - 42, 24, 84, 44);
           // logs + fire
           for (const a of [0.2, -0.2]) { c.save(); c.translate(fx, floorY - 8); c.rotate(a); rect(c, -24, -3, 48, 6, '#4d2e1d'); c.restore(); }
           flames(c, fx, floorY - 8, t, 1.05);
@@ -123,8 +161,7 @@
           const f = layer.begin(W, H);
           const candles = [fx - 80, fx - 70, fx + 78];
           for (const x of candles) rect(f, x - 2, top - 20 + (x === fx - 70 ? 4 : 0), 4, 12 - (x === fx - 70 ? 4 : 0), '#f0e6d0');
-          rect(f, fx - 36, top - 22, 18, 14, '#c8a060'); circle(f, fx - 27, top - 15, 5, '#f4efe4'); // little clock
-          rect(f, fx - 27, top - 18, 1, 3, '#2a2020'); rect(f, fx - 27, top - 15, 3, 1, '#2a2020');
+          mantelClock(f, fx - 27, top - 18);
           rect(f, fx + 30, top - 20, 16, 12, '#3a2a22'); rect(f, fx + 32, top - 18, 12, 8, '#d8b890'); // photo
           rect(f, fx + 56, top - 14, 10, 6, '#b86a4a');
           for (let i = 0; i < 5; i++) line(f, [fx + 61, top - 12, fx + 56 + i * 3 + sin(t * 0.6 + i) * 0.5, top - 4 + i * 5], '#5f8f5a', 2); // trailing plant
@@ -140,7 +177,7 @@
             backFigure(f, cx - 96, 200, { t, torso: 40, top: FRIEND.top, shade: FRIEND.shade, hair: FRIEND.hair, longHair: true, rim: 'rgba(255,170,100,0.6)', bob: sin(t * 0.9 + 2) * 0.5 });
             armchair(f, cx - 96, chairCol);
           }
-          backFigure(f, cx + 96, 198, { t, torso: 40, top: fit.top, shade: fit.shade, hair: lk.hair || '#3a2420', phones: lk.accent || null, rim: 'rgba(255,170,100,0.6)', bob: sin(t * 0.8) * 0.5 });
+          backFigure(f, cx + 96, 198, { t, torso: 40, top: fit.top, shade: fit.shade, hair: lk.hair || '#3a2420', rim: 'rgba(255,170,100,0.6)', bob: sin(t * 0.8) * 0.5 });
           armchair(f, cx + 96, chairCol);
           rrect(f, cx + 58, 230, 26, 9, 3, '#c8b890'); // blanket over the arm
           layer.end(c, P.tint, 0.4);
@@ -149,10 +186,14 @@
           const fire = 0.55 + 0.45 * lights;
           glow(c, fx, 160, 260 * fl, [255, 140, 60], 0.16 * fire);
           pool(c, fx, floorY + 10, 180 * fl, [255, 150, 70], 0.3 * fire, 0.3);
-          if (lights > 0.3) {
-            for (const x of candles) { const cy = top - 22 + (x === fx - 70 ? 4 : 0); ellipse(c, x, cy, 1.2, 2.2, '#ffd27a'); glow(c, x, cy, 10, [255, 200, 120], 0.35 * lights); }
-            glow(c, lampX, 88, 70, [255, 210, 150], 0.25 * lights);
-          }
+          candles.forEach((x, i) => { // flickering candle flames
+            const cy = top - 21 + (x === fx - 70 ? 4 : 0), k = 0.75 + 0.2 * sin(t * 13 + i * 2.1) + 0.12 * sin(t * 29 + i * 5.3);
+            const sway = sin(t * 7 + i * 1.7) * 0.5, fh = 2.4 * k;
+            glow(c, x, cy - 1, 11 * k, [255, 200, 120], (0.2 + 0.25 * lights) * k);
+            ellipse(c, x + sway, cy - fh * 0.6, 1.3, fh, '#ffb347');
+            ellipse(c, x + sway * 0.6, cy - fh * 0.4, 0.7, fh * 0.55, '#fff1b0');
+          });
+          if (lights > 0.3) glow(c, lampX, 88, 70, [255, 210, 150], 0.25 * lights);
           vignette(c, W, H, P.vig * 0.9);
           if (env.flash) { c.fillStyle = `rgba(200,210,255,${env.flash * 0.06})`; c.fillRect(0, 0, W, H); }
         },

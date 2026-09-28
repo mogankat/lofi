@@ -12,7 +12,7 @@
     x: '<svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>',
   };
 
-  const LOOK = { outfit: null, hair: null, accent: null, furniture: null, tent: null, pet: 'cat', petColor: null, friend: false };
+  const LOOK = { outfit: null, hair: null, gear: true, accent: null, furniture: null, tent: null, pet: 'cat', petColor: null, friend: false };
   const prefs = L.store.load('prefs', {
     scene: 'study', fps: 30, idleFade: true, autoMix: false, task: '', lighting: 'auto', timerPos: null, weekStart: 0,
     look: LOOK, soundVisuals: true, clock: { on: true, fmt: '12', seconds: false }, clockPos: null,
@@ -89,12 +89,59 @@
     c.globalAlpha = 1;
   }
 
+  // Scenes are drawn in a 270px-tall band. On tall screens (a phone held
+  // upright) the canvas is taller than the band: the whole scene width stays
+  // visible and the band's top and bottom edges are stretched to fill the rest,
+  // instead of cropping the sides away.
+  let CH = H, bandY = 0;
   function resize() {
-    const aspect = innerWidth / innerHeight;
-    W = Math.max(360, Math.round(H * (isFinite(aspect) && aspect > 0 ? aspect : 16 / 9)));
+    const aspect = innerWidth / innerHeight, a = isFinite(aspect) && aspect > 0 ? aspect : 16 / 9;
+    W = Math.max(360, Math.round(H * a));
+    CH = Math.max(H, Math.round(W / a));
+    bandY = Math.round((CH - H) * 0.55);
     canvas.width = W;
-    canvas.height = H;
+    canvas.height = CH;
     inst = scene.create(W, H);
+  }
+  // The extensions are filled with the *average* colours of the band's top and
+  // bottom rows (in a few horizontal zones), re-read a few times a second, so
+  // they're smooth fades rather than streaks of whatever sat on the edge.
+  const EDGE = 4;
+  let edgeCols = null, edgeAt = 0;
+  const rowCanvas = document.createElement('canvas'); // small CPU-side copy, so the main canvas stays GPU-backed
+  rowCanvas.height = 1;
+  const rowCtx = rowCanvas.getContext('2d', { willReadFrequently: true });
+  function sampleRow(y) {
+    if (rowCanvas.width !== W) rowCanvas.width = W;
+    rowCtx.drawImage(canvas, 0, y, W, 1, 0, 0, W, 1);
+    const px = rowCtx.getImageData(0, 0, W, 1).data, zone = W / EDGE, out = [];
+    for (let z = 0; z < EDGE; z++) {
+      let r = 0, g = 0, b = 0, n = 0;
+      for (let x = Math.floor(z * zone); x < Math.floor((z + 1) * zone); x++) { r += px[x * 4]; g += px[x * 4 + 1]; b += px[x * 4 + 2]; n++; }
+      out.push(`rgb(${(r / n) | 0},${(g / n) | 0},${(b / n) | 0})`);
+    }
+    return out;
+  }
+  function fillZones(cols, y, h) {
+    const g = ctx.createLinearGradient(0, 0, W, 0);
+    cols.forEach((col, i) => g.addColorStop((i + 0.5) / EDGE, col));
+    ctx.fillStyle = g;
+    ctx.fillRect(0, y, W, h);
+  }
+  function extendBand(now) {
+    const below = CH - bandY - H;
+    if (!edgeCols || now - edgeAt > 250) {
+      edgeCols = { top: sampleRow(bandY), bottom: sampleRow(bandY + H - 1) };
+      edgeAt = now;
+    }
+    fillZones(edgeCols.top, 0, bandY);
+    fillZones(edgeCols.bottom, bandY + H, below);
+    const up = ctx.createLinearGradient(0, 0, 0, bandY);
+    up.addColorStop(0, 'rgba(0,0,0,0.35)'); up.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = up; ctx.fillRect(0, 0, W, bandY);
+    const down = ctx.createLinearGradient(0, bandY + H, 0, CH);
+    down.addColorStop(0, 'rgba(0,0,0,0)'); down.addColorStop(1, 'rgba(0,0,0,0.45)');
+    ctx.fillStyle = down; ctx.fillRect(0, bandY + H, W, below);
   }
 
   function frame(now) {
@@ -108,6 +155,7 @@
     if (nowTod !== tod) { // lighting changed (picked, or Auto crossed into a new part of the day)
       if (tod) crossfade();
       tod = nowTod;
+      Ambient.setNight(tod === 'night'); // bird sounds become owl hoots
       renderThumbs();
     }
     const fx = soundFx();
@@ -118,18 +166,22 @@
     };
 
     ctx.save();
+    ctx.translate(0, bandY);
+    ctx.beginPath(); ctx.rect(0, 0, W, H); ctx.clip();
     inst.draw(ctx, t, dt, env);
     ctx.restore();
+    if (bandY) extendBand(now);
     if (scene.outdoor) {
-      if (fx.wind > 0) env.drawWind(ctx, { x: 0, y: 0, w: W, h: H });
+      const all = { x: 0, y: 0, w: W, h: CH };
+      if (fx.wind > 0) env.drawWind(ctx, all);
       if (fx.rain > 0) {
         ctx.fillStyle = `rgba(25,30,60,${0.2 * fx.rain})`;
-        ctx.fillRect(0, 0, W, H);
-        env.drawRain(ctx, { x: 0, y: 0, w: W, h: H });
+        ctx.fillRect(0, 0, W, CH);
+        env.drawRain(ctx, all);
       }
       if (weather.flash > 0) {
         ctx.fillStyle = `rgba(225,230,255,${weather.flash * 0.4})`;
-        ctx.fillRect(0, 0, W, H);
+        ctx.fillRect(0, 0, W, CH);
       }
     }
     if (snap) { // cross-fade from the previous scene
@@ -147,7 +199,7 @@
 
   function crossfade() {
     snap = document.createElement('canvas');
-    snap.width = W; snap.height = H;
+    snap.width = W; snap.height = CH;
     snap.getContext('2d').drawImage(canvas, 0, 0);
     fadeStart = performance.now();
   }
@@ -170,6 +222,7 @@
   function setLighting(v) {
     prefs.lighting = v;
     savePrefs();
+    Ambient.setNight(currentTod() === 'night'); // bird sounds become owl hoots at night
     $$('#lightingSeg button').forEach((b) => {
       const on = b.dataset.tod === v;
       b.classList.toggle('active', on);
@@ -251,7 +304,9 @@
   }
   function buildLook() {
     $('#lookControls').append(
-      section('character', 'Character', true, colorRow('outfit', 'Outfit'), colorRow('hair', 'Hair'), colorRow('accent', 'Headphones & hat')),
+      section('character', 'Character', true, colorRow('outfit', 'Outfit'), colorRow('hair', 'Hair'),
+        U.el('label', { class: 'check' }, U.el('input', { type: 'checkbox', id: 'lookGear', onchange: (e) => setLook('gear', e.target.checked) }), 'Headphones & hat'),
+        colorRow('accent', 'Headphones & hat colour')),
       section('pet', 'Pet', false,
         U.el('div', { class: 'seg small', id: 'petSeg' }, ...[['none', 'None'], ['cat', 'Cat'], ['dog', 'Dog']].map(([v, text]) =>
           U.el('button', { type: 'button', 'data-pet': v, text, onclick: () => setLook('pet', v) }))),
@@ -283,11 +338,13 @@
     $$('#petSeg button').forEach((b) => b.classList.toggle('active', b.dataset.pet === prefs.look.pet));
     $('.look-row[data-key="petColor"]').hidden = prefs.look.pet === 'none';
     $('#lookFriend').checked = prefs.look.friend;
+    $('#lookGear').checked = prefs.look.gear !== false;
+    $('.look-row[data-key="accent"]').hidden = prefs.look.gear === false;
     $('#soundVisuals').checked = prefs.soundVisuals;
     // Little previews in each closed section's header.
     const dot = (c) => U.el('i', { class: 'peek-dot' + (c ? '' : ' auto'), style: c ? `--c:${c}` : null });
     const peek = (id, ...kids) => $(`[data-acc="${id}"] .acc-peek`).replaceChildren(...kids);
-    peek('character', dot(prefs.look.outfit), dot(prefs.look.hair), dot(prefs.look.accent));
+    peek('character', dot(prefs.look.outfit), dot(prefs.look.hair), prefs.look.gear === false ? '' : dot(prefs.look.accent));
     peek('pet', prefs.look.pet === 'none' ? 'None' : prefs.look.pet === 'cat' ? 'Cat' : 'Dog');
     peek('things', dot(prefs.look.furniture), dot(prefs.look.tent));
     peek('company', prefs.look.friend ? 'Friend' : 'Just you');
