@@ -51,6 +51,10 @@ Google Drive.
 
 ## Google setup (Drive and Calendar)
 
+> **Easiest:** open **`google-setup.html`** on your site (**Settings → Google → Google setup →
+> Open the step-by-step setup guide**). It walks through the same steps, shows your site's exact
+> address with a Copy button, and saves your Client ID for you.
+
 This is a static page with no server, so the Google features need an **OAuth Client ID** from
 your own (free) Google Cloud project. It's a one-time setup, but Google's console has quite a
 few steps. The screens below are from the 2026 **Google Auth Platform** layout: *Branding*,

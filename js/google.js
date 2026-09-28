@@ -29,7 +29,10 @@
   // Get a token that includes `scope`. Call from a click handler.
   G.token = (scope) => {
     if (G.hasToken(scope)) return Promise.resolve(token);
-    if (!G.clientId()) return Promise.reject(new Error('Add a Google OAuth Client ID in Settings → Google first (see the README).'));
+    if (!G.clientId()) {
+      window.open('google-setup.html', '_blank', 'noopener');
+      return Promise.reject(new Error('Google isn’t set up yet. The setup guide opened in a new tab. Paste your Client ID there or in Settings → Google.'));
+    }
     const ask = () => new Promise((resolve, reject) => {
       const client = window.google.accounts.oauth2.initTokenClient({
         client_id: G.clientId(),

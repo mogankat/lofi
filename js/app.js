@@ -15,7 +15,7 @@
   const LOOK = { outfit: null, hair: null, gear: 'phones', accent: null, furniture: null, tent: null, pet: 'cat', petColor: null, friend: false };
   const prefs = L.store.load('prefs', {
     scene: 'study', fps: 30, idleFade: true, autoMix: false, task: '', lighting: 'auto', timerPos: null, weekStart: 0,
-    look: LOOK, soundVisuals: true, clock: { on: true, fmt: '12', seconds: false }, clockPos: null,
+    look: LOOK, soundVisuals: true, timerOpen: true, clock: { on: true, fmt: '12', seconds: false }, clockPos: null,
   });
   prefs.look = { ...LOOK, ...prefs.look };
   delete prefs.look.birds; // birds now follow the bird sounds
@@ -378,6 +378,9 @@
   function renderTimer() {
     const started = Timer.started;
     document.body.dataset.mode = Timer.mode;
+    document.body.classList.toggle('timer-running', Timer.running); // zen mode only shows the timer while it runs
+    // While the timer is closed but running, the dock button shows the countdown.
+    $('#timerBadge').textContent = !prefs.timerOpen && Timer.running ? Timer.format(Timer.remaining) : '';
     $('#time').textContent = Timer.format(Timer.remaining);
     $('#progressBar').style.width = (Math.min(1, Math.max(0, 1 - Timer.remaining / Timer.total)) * 100).toFixed(2) + '%';
     const label = Timer.LABEL[Timer.mode].toLowerCase();
@@ -481,6 +484,20 @@
     return { apply, reset };
   }
   const timerDrag = draggable($('.timer'), 'timerPos');
+
+  // ---- open / close the timer card ----
+  function setTimerOpen(open) {
+    prefs.timerOpen = open;
+    savePrefs();
+    document.body.classList.toggle('timer-closed', !open);
+    const btn = $('#timerToggle');
+    btn.classList.toggle('on', open);
+    btn.setAttribute('aria-pressed', open);
+    if (open) timerDrag.apply(); // it can't be measured while hidden
+    renderTimer();
+  }
+  $('#timerClose').addEventListener('click', () => setTimerOpen(false));
+  $('#timerToggle').addEventListener('click', () => setTimerOpen(!prefs.timerOpen));
   const clockDrag = draggable(clockEl, 'clockPos');
   const applyTimerPos = () => { timerDrag.apply(); clockDrag.apply(); };
   const resetTimerPos = () => { timerDrag.reset(); clockDrag.reset(); };
@@ -768,6 +785,7 @@
     if (e.metaKey || e.ctrlKey || e.altKey || (e.repeat && !e.key.startsWith('Arrow'))) return;
     const k = e.key.toLowerCase();
     if (k === ' ') { e.preventDefault(); Timer.toggle(); }
+    else if (k === 't') setTimerOpen(!prefs.timerOpen);
     else if (k === 'r') Timer.reset();
     else if (k === 's') Timer.skip();
     else if (k === 'm') Music.toggle();
@@ -803,6 +821,7 @@
   renderBadges();
   renderMusic();
   Timer.init();
+  setTimerOpen(prefs.timerOpen !== false);
   Weather.init();
   applyTimerPos();
   poke();

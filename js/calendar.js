@@ -71,10 +71,9 @@
       section('🍅 Focus', info.focus.sessions
         ? el('p', { text: `${info.focus.sessions} session${info.focus.sessions > 1 ? 's' : ''} · ${U.fmtMinutes(info.focus.minutes)}` })
         : none('No focus sessions.')),
-      section('✓ Habits', habits.length
-        ? el('ul', { class: 'cal-habits' }, habits.map((h) => el('li', { class: info.habits.includes(h) ? 'done' : '' },
-          el('span', { class: 'tick', text: info.habits.includes(h) ? '✓' : '○' }), h.name)))
-        : none('No habits set up yet.')),
+      section('✓ Habits', info.habits.length
+        ? el('ul', { class: 'cal-habits' }, info.habits.map((h) => el('li', { class: 'done' }, el('span', { class: 'tick', text: '✓' }), h.name)))
+        : none(habits.length ? 'No habits checked off.' : 'No habits set up yet.')),
       section('☑ Tasks done', info.tasks.length
         ? el('ul', {}, info.tasks.map((t) => el('li', {}, t.text, el('span', { class: 'muted', text: ` · ${t.list}` }))))
         : none('No tasks checked off.')),
