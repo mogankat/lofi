@@ -8,6 +8,8 @@
   const L = window.Lofi, U = L.util;
   const G = {};
   let gis = null, token = null, expires = 0, granted = new Set();
+  const tokenListeners = [];
+  G.onToken = (fn) => tokenListeners.push(fn); // after every successful sign-in
 
   G.clientId = () => (L.store.load('googleClientId', '') || (L.config && L.config.googleClientId) || '').trim();
 
@@ -45,6 +47,7 @@
           expires = Date.now() + r.expires_in * 1000;
           granted = new Set((r.scope || '').split(' '));
           resolve(token);
+          setTimeout(() => tokenListeners.forEach((fn) => fn()), 0);
         },
         error_callback: (e) => reject(new Error(
           e.type === 'popup_closed' ? 'Google sign-in was closed.'

@@ -124,6 +124,7 @@
             U.iconBtn('trash', { class: 'icon-btn del', title: 'Delete entry', 'aria-label': 'Delete entry', onclick: () => {
               if (!confirm(`Delete “${titleOf(current)}”? This can’t be undone (unless you have a backup).`)) return;
               entries = entries.filter((x) => x !== current);
+              U.forget(current.id);
               persist();
               select(null);
             } })),
@@ -137,6 +138,18 @@
     renderList();
     renderEditor();
   };
+  // New data arrived from another device (sync). Keep the open entry open, and
+  // don't touch the editor while you're typing in it.
+  J.reload = () => {
+    entries = L.store.load('journal', []);
+    const id = current && current.id;
+    current = id ? entries.find((e) => e.id === id) || null : null;
+    if (!root) return;
+    renderList();
+    const typing = [U.$('.j-body', root), U.$('.j-title-in', root)].includes(document.activeElement);
+    if (!typing) renderEditor();
+  };
+
   J.onOpen = () => {
     renderList();
     if (!current) { const latest = sorted()[0]; if (latest) select(latest); else renderEditor(); }
