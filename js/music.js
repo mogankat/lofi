@@ -36,8 +36,29 @@
     return [...extra, ...own.filter((s) => !isSeasonal(s))];
   }
 
+  // A browser keeps its own copy of the station list once it's been changed, so
+  // when the defaults change, bring saved lists up to date once: drop retired
+  // default stations and add new ones in their default positions. Stations the
+  // user added themselves are kept. Bump DEFAULTS_VERSION when defaults change.
+  const DEFAULTS_VERSION = 2;
+  const RETIRED = ['jfKfPfyJRdk', '28KRPhVzCus']; // Lofi Girl streams that refuse embedding
+  const sameStation = (a, b) => (a.video && a.video === b.video) || (a.list && a.list === b.list) || (a.url && a.url === b.url);
+  function upgradeSaved() {
+    const saved = L.store.load('stations', null);
+    if (!saved || L.store.load('stationsVersion', 1) >= DEFAULTS_VERSION) return saved || DEFAULT_STATIONS;
+    const list = saved.filter((s) => s.custom || !RETIRED.includes(s.video));
+    DEFAULT_STATIONS.forEach((d, i) => {
+      if (list.some((s) => sameStation(s, d))) return;
+      const before = DEFAULT_STATIONS.slice(0, i).reverse().find((p) => list.some((s) => sameStation(s, p)));
+      list.splice(before ? list.findIndex((s) => sameStation(s, before)) + 1 : 0, 0, { ...d });
+    });
+    L.store.save('stations', list.filter((s) => !isSeasonal(s)));
+    L.store.save('stationsVersion', DEFAULTS_VERSION);
+    return list;
+  }
+
   const M = {
-    stations: withSeason(L.store.load('stations', DEFAULT_STATIONS)),
+    stations: withSeason(upgradeSaved()),
     index: L.store.load('stationIndex', 0),
     volume: L.store.load('musicVolume', 60),
     playing: false,
@@ -52,7 +73,10 @@
   const emit = () => M.onChange && M.onChange();
   const fail = (msg) => { M.playing = false; M.loading = false; emit(); if (M.onError) M.onError(msg); };
   const keyOf = (st) => st.list || st.video;
-  const saveStations = () => L.store.save('stations', M.stations.filter((s) => !isSeasonal(s)));
+  const saveStations = () => {
+    L.store.save('stations', M.stations.filter((s) => !isSeasonal(s)));
+    L.store.save('stationsVersion', DEFAULTS_VERSION);
+  };
 
   M.current = () => M.stations[M.index];
   M.activeType = () => active;
