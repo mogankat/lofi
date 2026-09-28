@@ -3,7 +3,7 @@
   'use strict';
   const K = window.Lofi.sceneKit;
   const { TAU, PHASES, rng, rect, circle, ellipse, rrect, poly, line, vgrad, glow, pool, vignette, shade, sky, makeStars, stars, moon, sunOrMoon, makeFlock, flock, makeLayer, lookOf, headwear, friendWear, outfit, FRIEND, drawPet, perchBird, owl, backFigure, flames } = K;
-  const { sin, round } = Math;
+  const { sin, cos, round } = Math;
 
   const HOME = {
     morning: {
@@ -65,13 +65,95 @@
     circle(c, cx0, cy0, 0.9, '#2a2020');
   }
 
-  // Wingback armchair seen from behind; the person's head shows above it.
-  function armchair(c, x, col) {
-    const dark = shade(col, -0.3), light = shade(col, 0.12);
-    rrect(c, x - 50, 224, 17, 46, 7, dark); rrect(c, x + 33, 224, 17, 46, 7, dark); // arms
-    rrect(c, x - 38, 196, 76, 74, 16, col); // back
-    rrect(c, x - 32, 200, 64, 3, 2, light);
-    for (const dx of [-18, 0, 18]) circle(c, x + dx, 214, 1.3, dark); // buttons
+  // ---- a little 3D for the armchairs ----
+  // Parts are boxes in chair space (x = the sitter's right, y = up, z = the way
+  // the chair faces), turned by `ang` about the vertical (positive = turned to
+  // face left) and seen from behind and slightly above: further away draws
+  // higher up. Faces pointing away are skipped and boxes are painted back to
+  // front, so the chair's shape and angle come out right on their own.
+  const ELEV = 0.38;
+  function projector(ox, oy, ang) {
+    const cs = cos(ang), sn = sin(ang);
+    const turn = (x, z) => [x * cs - z * sn, x * sn + z * cs]; // → world [X, Z]
+    return {
+      pt: (x, y, z) => { const [X, Z] = turn(x, z); return [ox + X, oy - y - Z * ELEV]; },
+      depth: (x, y, z) => turn(x, z)[1] - y * ELEV,
+      turn,
+    };
+  }
+  const FACES = [ // [normal, corners of box b = [x0, x1, y0, y1, z0, z1]]
+    [[1, 0, 0], (b) => [[b[1], b[2], b[4]], [b[1], b[2], b[5]], [b[1], b[3], b[5]], [b[1], b[3], b[4]]]],
+    [[-1, 0, 0], (b) => [[b[0], b[2], b[4]], [b[0], b[2], b[5]], [b[0], b[3], b[5]], [b[0], b[3], b[4]]]],
+    [[0, 1, 0], (b) => [[b[0], b[3], b[4]], [b[1], b[3], b[4]], [b[1], b[3], b[5]], [b[0], b[3], b[5]]]],
+    [[0, 0, 1], (b) => [[b[0], b[2], b[5]], [b[1], b[2], b[5]], [b[1], b[3], b[5]], [b[0], b[3], b[5]]]],
+    [[0, 0, -1], (b) => [[b[0], b[2], b[4]], [b[1], b[2], b[4]], [b[1], b[3], b[4]], [b[0], b[3], b[4]]]],
+  ];
+  // part: { box, col (hex), tone?, bias?, after?(c, P) }. fireX: -1 if the fire is to the left.
+  function drawParts(c, P, parts, fireX) {
+    parts.map((p) => ({ p, d: P.depth((p.box[0] + p.box[1]) / 2, (p.box[2] + p.box[3]) / 2, (p.box[4] + p.box[5]) / 2) + (p.bias || 0) }))
+      .sort((a, b) => b.d - a.d)
+      .forEach(({ p }) => {
+        for (const [[nx, ny, nz], corners] of FACES) {
+          const [wx, wz] = P.turn(nx, nz);
+          if (wz - ELEV * ny >= 0) continue; // facing away from us
+          const light = ny > 0 ? 0.14 : wz < -0.7 ? 0 : -0.16; // tops catch light, sides are darker
+          const warm = fireX * wx > 0.3 ? 0.07 : 0; // the side facing the fire picks up its glow
+          poly(c, corners(p.box).flatMap(([x, y, z]) => P.pt(x, y, z)), shade(p.col, light + warm + (p.tone || 0)));
+        }
+        if (p.after) p.after(c, P);
+      });
+  }
+
+  // Wingback armchair seen from behind, turned toward the fire: the tall back
+  // with its "wings", the rolled arm on the fire side with a plaid throw over it,
+  // skirt, and wooden legs. ang > 0 turns it to face left.
+  function armchair(c, P, ang, col, [blanket, stripe]) {
+    const wood = '#3a2418', dark = shade(col, -0.35);
+    const s = ang > 0 ? -1 : 1; // the arm on the fire side (the one we can see): -1 = sitter's left
+    const armX = s < 0 ? [-28, -19] : [19, 28], rollX = s < 0 ? [-30, -17] : [17, 30], otherArm = armX.map((v) => -v).reverse(), otherRoll = rollX.map((v) => -v).reverse();
+    const bx = s < 0 ? -31 : 31; // outside face of the throw
+    const parts = [
+      ...[[-27, -23], [23, 27]].flatMap((lx) => [[-25, -21], [19, 23]].map((lz) => ({ box: [lx[0], lx[1], 0, 9, lz[0], lz[1]], col: wood }))),
+      { box: [-28, 28, 9, 20, -26, 24], col, tone: -0.12, after: (cc, Q) => { // skirt, with piping along its top
+        const a = Q.pt(-28, 20, -26.1), b = Q.pt(28, 20, -26.1);
+        line(cc, [a[0], a[1], b[0], b[1]], shade(col, 0.2), 1);
+      } },
+      { box: [-20, 20, 20, 27, -16, 22], col, tone: 0.05 }, // seat cushion
+      { box: [otherArm[0], otherArm[1], 20, 36, -16, 22], col }, { box: [otherRoll[0], otherRoll[1], 36, 41, -16, 25], col },
+      { box: [armX[0], armX[1], 20, 36, -16, 22], col }, { box: [rollX[0], rollX[1], 36, 41, -16, 25], col },
+      { box: [s < 0 ? -31 : 16, s < 0 ? -16 : 31, 21, 43, -4, 12], col: blanket, bias: -5, after: (cc, Q) => { // throw over the arm
+        for (const y of [28, 35]) { const a = Q.pt(bx, y, -4), b = Q.pt(bx, y, 12); line(cc, [a[0], a[1], b[0], b[1]], stripe, 1.6); }
+        const a = Q.pt(bx, 21, 4), b = Q.pt(bx, 43, 4); cc.globalAlpha = 0.55; line(cc, [a[0], a[1], b[0], b[1]], stripe, 1.4); cc.globalAlpha = 1;
+        for (let z = -3; z <= 11; z += 3) { const f = Q.pt(bx, 21, z); rect(cc, f[0], f[1], 1, 2 + (z % 2 ? 1 : 0), blanket); } // fringe
+      } },
+      { box: [-28, -20, 48, 76, -16, -6], col }, { box: [20, 28, 48, 76, -16, -6], col }, // wings
+      { box: [-28, 28, 20, 76, -26, -16], col, after: (cc, Q) => { // the back, button-tufted
+        [[62, [-14, 0, 14]], [50, [-7, 7]], [38, [-14, 0, 14]]].forEach(([y, xs]) => xs.forEach((x) => { const q = Q.pt(x, y, -26.1); circle(cc, q[0], q[1], 1.1, dark); }));
+      } },
+      { box: [-24, 24, 76, 80, -25, -17], col }, // rounded crest along the top
+    ];
+    drawParts(c, P, parts, ang > 0 ? -1 : 1);
+  }
+
+  // Small round side table with a mug (returns where its steam rises from),
+  // or a couple of books when nobody's using it.
+  function sideTable(c, x, mug) {
+    const wood = '#6a4630';
+    ellipse(c, x, 263, 12, 2.5, 'rgba(0,0,0,0.25)');
+    ellipse(c, x, 262, 9, 2.5, shade(wood, -0.25));
+    rect(c, x - 2, 234, 4, 28, shade(wood, -0.2));
+    ellipse(c, x, 233, 15, 4, shade(wood, -0.15));
+    ellipse(c, x, 232, 15, 3.5, wood);
+    ellipse(c, x, 231.5, 13, 2.5, shade(wood, 0.12));
+    if (!mug) {
+      rect(c, x - 8, 227, 15, 3, '#46708a'); rect(c, x - 6, 224, 12, 3, '#b08a4c');
+      rect(c, x + 6, 227.5, 1, 2, '#e8dcc4');
+      return null;
+    }
+    rect(c, x - 4, 222, 8, 9, mug); rect(c, x - 4, 222, 8, 2, shade(mug, -0.15));
+    c.strokeStyle = mug; c.lineWidth = 1.5;
+    c.beginPath(); c.arc(x + 5, 226.5, 2.3, -Math.PI / 2, Math.PI / 2); c.stroke();
+    return [x, 221];
   }
 
   window.Lofi.scenes.register({
@@ -166,20 +248,31 @@
           rect(f, fx + 56, top - 14, 10, 6, '#b86a4a');
           for (let i = 0; i < 5; i++) line(f, [fx + 61, top - 12, fx + 56 + i * 3 + sin(t * 0.6 + i) * 0.5, top - 4 + i * 5], '#5f8f5a', 2); // trailing plant
           // floor lamp
-          const lampX = cx - 140;
+          const lampX = cx - 212; // beside the window, out of the way of the side table
           rect(f, lampX - 1, 90, 2, floorY - 88, '#2a2426'); ellipse(f, lampX, floorY, 8, 2, '#2a2426');
           poly(f, [lampX - 12, 92, lampX + 12, 92, lampX + 8, 76, lampX - 8, 76], lights > 0.3 ? '#f0d8a8' : '#d8c8a8');
           // rug
           ellipse(f, cx, 242, 150, 22, '#8a4a4a'); ellipse(f, cx, 242, 138, 18, '#a85a54'); ellipse(f, cx, 242, 120, 14, '#8a4a4a');
           drawPet(f, lk, cx - 4, 238, t);
-          const chairCol = lk.furniture || '#6a3a4a';
-          if (lk.friend) {
-            backFigure(f, cx - 96, 200, { t, torso: 40, top: FRIEND.top, shade: FRIEND.shade, hair: FRIEND.hair, longHair: true, ...friendWear(lk, true), rim: 'rgba(255,170,100,0.6)', bob: sin(t * 0.9 + 2) * 0.5 });
-            armchair(f, cx - 96, chairCol);
-          }
-          backFigure(f, cx + 96, 198, { t, torso: 40, top: fit.top, shade: fit.shade, hair: lk.hair || '#3a2420', ...headwear(lk, null, '#c9574a', true), rim: 'rgba(255,170,100,0.6)', bob: sin(t * 0.8) * 0.5 });
-          armchair(f, cx + 96, chairCol);
-          rrect(f, cx + 58, 230, 26, 9, 3, '#c8b890'); // blanket over the arm
+          // Two armchairs turned toward the fire (and each other). The guest chair
+          // is always there; the friend just fills it. People are drawn first so
+          // the chair back hides all but their heads.
+          const chairCol = lk.furniture || '#6a3a4a', mugs = [];
+          const chair = (ox, ang, throwCols, person) => {
+            ellipse(f, ox + (ang > 0 ? -6 : 6), 259, 40, 5, 'rgba(0,0,0,0.25)'); // shadow
+            const P = projector(ox, 256, ang);
+            if (person) { // only what shows above the chair back (so sleeves don't poke out the sides)
+              const [hx, hy] = P.pt(0, 82, -8), top = P.pt(0, 80, -26)[1];
+              f.save(); f.beginPath(); f.rect(0, 0, W, top + 3); f.clip();
+              backFigure(f, hx, hy + 17, { t, torso: 28, rim: 'rgba(255,170,100,0.6)', ...person });
+              f.restore();
+            }
+            armchair(f, P, ang, chairCol, throwCols);
+          };
+          chair(cx - 70, -0.5, ['#b8cbb8', '#4a6a8a'], lk.friend && { top: FRIEND.top, shade: FRIEND.shade, hair: FRIEND.hair, longHair: true, skin: FRIEND.skin, ...friendWear(lk, true), turn: 1, bob: sin(t * 0.9 + 2) * 0.5 });
+          mugs.push(sideTable(f, cx - 124, lk.friend ? '#6f8fb8' : null));
+          chair(cx + 70, 0.5, ['#d8c8a0', '#b0584a'], { top: fit.top, shade: fit.shade, hair: lk.hair || '#3a2420', ...headwear(lk, null, '#c9574a', true), turn: -1, bob: sin(t * 0.8) * 0.5 });
+          mugs.push(sideTable(f, cx + 124, '#e8dcc6'));
           layer.end(c, P.tint, 0.4);
 
           // ---- light ----
@@ -194,6 +287,7 @@
             ellipse(c, x + sway * 0.6, cy - fh * 0.4, 0.7, fh * 0.55, '#fff1b0');
           });
           if (lights > 0.3) glow(c, lampX, 88, 70, [255, 210, 150], 0.25 * lights);
+          mugs.forEach((m) => m && K.steam(c, m[0], m[1], t, 0.22));
           vignette(c, W, H, P.vig * 0.9);
           if (env.flash) { c.fillStyle = `rgba(200,210,255,${env.flash * 0.06})`; c.fillRect(0, 0, W, H); }
         },
