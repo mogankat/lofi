@@ -2,26 +2,14 @@
 (function () {
   'use strict';
   const K = window.Lofi.sceneKit;
-  const { TAU, PHASES, rng, rect, circle, ellipse, rrect, poly, line, vgrad, glow, pool, vignette, shade, sky, makeStars, stars, moon, sunOrMoon, makeFlock, flock, makeLayer, lookOf, headwear, friendWear, outfit, FRIEND, drawPet, perchBird, owl, backFigure, flames } = K;
+  const { PHASES, rng, rect, circle, ellipse, rrect, poly, line, vgrad, glow, pool, vignette, shade, makeLayer, lookOf, headwear, friendWear, outfit, FRIEND, drawPet, backFigure, flames } = K;
   const { sin, cos, round } = Math;
 
   const HOME = {
-    morning: {
-      wall: ['#c9b8a0', '#b5a28a'], panel: '#9a8468', floor: ['#9a6a44', '#7a5234'], stone: '#b8aca0',
-      mantel: '#6a4a32', shelf: '#5a3e2a', hills: '#86a07e', trees: '#5f7f5c', sun: [0.3, 0.3], bird: '#3a3a4a',
-    },
-    afternoon: {
-      wall: ['#d4c4ac', '#bea992'], panel: '#a08a6e', floor: ['#a4724a', '#825a3a'], stone: '#c0b4a8',
-      mantel: '#6e4e36', shelf: '#5e422e', hills: '#80a46e', trees: '#58804e', sun: null, bird: '#3a3a4a',
-    },
-    evening: {
-      wall: ['#8e6c62', '#6c5048'], panel: '#5a4238', floor: ['#6e4a32', '#523624'], stone: '#8a7a78',
-      mantel: '#523a28', shelf: '#48321f', hills: '#8a6a86', trees: '#4e4460', sun: [0.7, 0.62], bird: '#3a2a3a',
-    },
-    night: {
-      wall: ['#3a2c34', '#2a2028'], panel: '#221a20', floor: ['#3a2a22', '#261a14'], stone: '#5a5058',
-      mantel: '#3a281c', shelf: '#2e2016', hills: '#1c2038', trees: '#121428', sun: null, bird: null,
-    },
+    morning: { wall: ['#c9b8a0', '#b5a28a'], panel: '#9a8468', floor: ['#9a6a44', '#7a5234'], stone: '#b8aca0', mantel: '#6a4a32', shelf: '#5a3e2a' },
+    afternoon: { wall: ['#d4c4ac', '#bea992'], panel: '#a08a6e', floor: ['#a4724a', '#825a3a'], stone: '#c0b4a8', mantel: '#6e4e36', shelf: '#5e422e' },
+    evening: { wall: ['#8e6c62', '#6c5048'], panel: '#5a4238', floor: ['#6e4a32', '#523624'], stone: '#8a7a78', mantel: '#523a28', shelf: '#48321f' },
+    night: { wall: ['#3a2c34', '#2a2028'], panel: '#221a20', floor: ['#3a2a22', '#261a14'], stone: '#5a5058', mantel: '#3a281c', shelf: '#2e2016' },
   };
   const BOOKS = ['#8a4a4a', '#3f6f8f', '#c8a060', '#5a8a5a', '#7a5a9a', '#d8c8a8', '#a86a3a', '#4a5a7a'];
 
@@ -157,12 +145,12 @@
   }
 
   window.Lofi.scenes.register({
-    id: 'fireplace', name: 'Fireside', outdoor: false,
+    id: 'fireplace', name: 'Fireside', group: 'home', outdoor: false,
     mix: { fire: 0.55, rain: 0.2 },
     create(W, H) {
-      const r = rng(61), cx = round(W / 2), layer = makeLayer(), birds = makeFlock(), floorY = 205;
+      const r = rng(61), cx = round(W / 2), layer = makeLayer(), floorY = 205;
       const win = { x: cx - 238, y: 42, w: 78, h: 104 };
-      const starList = makeStars(r, 16, win.x, win.w, win.y, 50);
+      const view = K.viewer(win, { seed: 61, perch: 0.77 });
       const shelf = { x: cx + 152, y: 40, w: 80, h: floorY - 40 };
       const painting = makePainting(r);
       const books = [];
@@ -183,17 +171,7 @@
           // window
           c.save();
           c.beginPath(); c.rect(win.x, win.y, win.w, win.h); c.clip();
-          sky(c, win.x, win.y, win.w, win.h, P.sky);
-          stars(c, starList, t, P.stars);
-          if (P.moon) moon(c, win.x + 52, win.y + 22, 7);
-          else if (M.sun) sunOrMoon(c, P, win.x + win.w * M.sun[0], win.y + win.h * M.sun[1], 9);
-          if (M.bird) flock(c, birds, t, dt, env.fx.birds, win.x, win.x + win.w, win.y + 8, win.y + 40, M.bird);
-          if (env.flash) { c.fillStyle = `rgba(200,210,255,${env.flash * 0.55})`; c.fillRect(win.x, win.y, win.w, win.h); }
-          K.ridge(c, W, H, (x) => win.y + 78 - 8 * sin(x * 0.05), M.hills);
-          for (let i = 0; i < 5; i++) { const tx = win.x + 8 + i * 17; poly(c, [tx, win.y + 64 - (i % 2) * 6, tx - 7, win.y + 86, tx + 7, win.y + 86], M.trees); }
-          if (env.fx.birds) { if (P.moon) owl(c, win.x + 60, win.y + win.h, t); else perchBird(c, win.x + 60, win.y + win.h, t, 1, '#8a6a4a', true); }
-          env.drawWind(c, win);
-          env.drawRain(c, win, 0.6);
+          view.draw(c, t, dt, env);
           c.restore();
 
           // walls

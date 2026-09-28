@@ -28,8 +28,11 @@
 
   G.hasToken = (scope) => !!token && Date.now() < expires - 60000 && granted.has(scope);
 
-  // Get a token that includes `scope`. Call from a click handler.
-  G.token = (scope) => {
+  // Get a token that includes `scope`. Call from a click handler. `also`: more
+  // permissions to ask for in the same popup (optional: they can be unticked).
+  // Anything granted before comes back too (include_granted_scopes).
+  let pending = null; // one popup at a time; everyone waiting shares it
+  G.token = (scope, also = []) => {
     if (G.hasToken(scope)) return Promise.resolve(token);
     if (!G.clientId()) {
       window.open('google-setup.html', '_blank', 'noopener');
@@ -38,15 +41,14 @@
     const ask = () => new Promise((resolve, reject) => {
       const client = window.google.accounts.oauth2.initTokenClient({
         client_id: G.clientId(),
-        scope,
+        scope: [scope, ...also].join(' '),
         include_granted_scopes: true,
         callback: (r) => {
           if (r.error) return reject(new Error(`Google sign-in failed: ${r.error_description || r.error}`));
-          if (!window.google.accounts.oauth2.hasGrantedAllScopes(r, scope)) return reject(new Error('Google access wasn’t granted — tick the permission box in the sign-in window.'));
           token = r.access_token;
           expires = Date.now() + r.expires_in * 1000;
           granted = new Set((r.scope || '').split(' '));
-          resolve(token);
+          resolve();
           setTimeout(() => tokenListeners.forEach((fn) => fn()), 0);
         },
         error_callback: (e) => reject(new Error(
@@ -56,8 +58,15 @@
       });
       client.requestAccessToken();
     });
-    if (window.google && window.google.accounts) return ask();
-    return G.preload().then(ask);
+    if (!pending) {
+      pending = window.google && window.google.accounts ? ask() : G.preload().then(ask);
+      const done = () => { pending = null; };
+      pending.then(done, done);
+    }
+    return pending.then(() => {
+      if (!granted.has(scope)) throw new Error('Google access wasn’t granted — tick the permission box in the sign-in window.');
+      return token;
+    });
   };
 
   // fetch() with the token attached. Errors carry .status.

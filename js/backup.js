@@ -73,23 +73,38 @@
   B.clientId = () => L.Google.clientId();
   B.preload = () => L.Google.preload();
 
-  async function folderId() {
-    const saved = L.store.load('driveFolder', null);
-    if (saved) {
-      try {
-        const f = await api('GET', `https://www.googleapis.com/drive/v3/files/${saved}?fields=id,trashed`);
-        if (!f.trashed) return saved;
-      } catch (e) { if (e.status !== 404) throw e; }
-    }
-    const f = await api('POST', 'https://www.googleapis.com/drive/v3/files', {
-      body: JSON.stringify({ name: FOLDER, mimeType: 'application/vnd.google-apps.folder' }),
-      headers: { 'Content-Type': 'application/json' },
-    });
-    L.store.save('driveFolder', f.id);
-    return f.id;
+  const FOLDER_MIME = 'application/vnd.google-apps.folder';
+
+  // Is this file (or folder) still in Drive and not in the trash? Deleting a
+  // folder in Drive only trashes its files, and a trashed file can still be
+  // read and written by id, so saved ids have to be checked.
+  async function alive(id) {
+    try { return !(await api('GET', `https://www.googleapis.com/drive/v3/files/${id}?fields=trashed`)).trashed; }
+    catch (e) { if (e.status === 404) return false; throw e; }
   }
 
-  // Create the file the first time, then keep updating the same one.
+  // The oldest match (the app only sees what it made itself), so every device
+  // settles on the same one.
+  async function find(name, { parent = null, folder = false } = {}) {
+    const q = [`name='${name}'`, 'trashed=false', folder && `mimeType='${FOLDER_MIME}'`, parent && `'${parent}' in parents`].filter(Boolean).join(' and ');
+    const r = await api('GET', `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(q)}&orderBy=createdTime&fields=files(id)`);
+    return r.files.length ? r.files[0].id : null;
+  }
+
+  // The "Lofi Focus" folder: this device's, else one another device made, else a new one.
+  async function folderId() {
+    const saved = L.store.load('driveFolder', null);
+    if (saved && await alive(saved)) return saved;
+    const id = await find(FOLDER, { folder: true }) || (await api('POST', 'https://www.googleapis.com/drive/v3/files?fields=id', {
+      body: JSON.stringify({ name: FOLDER, mimeType: FOLDER_MIME }),
+      headers: { 'Content-Type': 'application/json' },
+    })).id;
+    L.store.save('driveFolder', id);
+    return id;
+  }
+
+  // Keep updating the same file: the one saved here, else one with that name
+  // already in the folder (e.g. from another device), else a new one.
   async function upsert(file, content, parent) {
     const boundary = 'lofi' + U.uid();
     const multipart = (meta) => [
@@ -97,14 +112,18 @@
       `--${boundary}`, `Content-Type: ${file.mime}; charset=UTF-8`, '', content, `--${boundary}--`,
     ].join('\r\n');
     const headers = { 'Content-Type': `multipart/related; boundary=${boundary}` };
-    const id = L.store.load(file.key, null);
-    if (id) {
+    const update = (id) => api('PATCH', `https://www.googleapis.com/upload/drive/v3/files/${id}?uploadType=multipart&fields=id,trashed`, { body: multipart({ name: file.name }), headers });
+    const saved = L.store.load(file.key, null);
+    if (saved) {
       try {
-        return await api('PATCH', `https://www.googleapis.com/upload/drive/v3/files/${id}?uploadType=multipart`, { body: multipart({ name: file.name }), headers });
+        const f = await update(saved);
+        if (!f.trashed) return f;
       } catch (e) { if (e.status !== 404) throw e; }
     }
-    const folder = typeof parent === 'function' ? await parent() : parent; // looked up only when creating
-    const f = await api('POST', 'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', { body: multipart({ name: file.name, mimeType: file.mime, parents: [folder] }), headers });
+    const folder = typeof parent === 'function' ? await parent() : parent; // looked up only when needed
+    const existing = await find(file.name, { parent: folder });
+    const f = existing ? await update(existing)
+      : await api('POST', 'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id', { body: multipart({ name: file.name, mimeType: file.mime, parents: [folder] }), headers });
     L.store.save(file.key, f.id);
     return f;
   }
@@ -133,6 +152,7 @@
   B.restoreFromDrive = async () => {
     try {
       let id = L.store.load(FILES.backup.key, null);
+      if (id && !(await alive(id))) id = null;
       if (!id) { // e.g. on a new computer: find the backup this app saved before
         const q = encodeURIComponent(`name='${FILES.backup.name}' and trashed=false`);
         const found = await api('GET', `https://www.googleapis.com/drive/v3/files?q=${q}&orderBy=modifiedTime desc&fields=files(id,modifiedTime)`);
@@ -161,14 +181,16 @@
 
   // Shared with sync.js
   B.api = api;
+  B.alive = alive;
+  B.find = find;
   B.folderId = folderId;
   B.upsert = upsert;
 
   B.renderStatus = (msg) => {
     const last = L.store.load('driveLastSync', null);
-    const text = msg || (last ? `Last saved to Drive ${new Date(last).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}` : B.clientId() ? 'Not saved to Drive yet' : null);
-    U.$$('.j-sync').forEach((e) => { e.textContent = text || 'Google isn’t set up yet — see Settings → Google'; });
-    U.$$('.drive-status').forEach((e) => { e.textContent = text || 'Add your Client ID under “Google setup” to turn this on.'; });
+    const text = msg || (last ? `Last saved to Drive ${new Date(last).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}`
+      : B.clientId() ? 'Not saved to Drive yet' : 'Add your Client ID under “Google setup” to turn this on.');
+    U.$$('.drive-status').forEach((e) => { e.textContent = text; });
   };
 
   L.Backup = B;

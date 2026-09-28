@@ -1,8 +1,8 @@
-// Study desk by a city window.
+// Study desk by a big window.
 (function () {
   'use strict';
   const K = window.Lofi.sceneKit;
-  const { TAU, PI, PHASES, rng, rect, circle, ellipse, rrect, poly, line, vgrad, glow, pool, vignette, shade, sky, makeStars, stars, moon, sunOrMoon, makeLayer, lookOf, headwear, outfit, drawPet, perchBird, owl, backFigure, steam, makeFlock, flock } = K;
+  const { TAU, PI, PHASES, rect, circle, ellipse, rrect, poly, line, vgrad, glow, pool, vignette, shade, makeLayer, lookOf, headwear, outfit, drawPet, backFigure, steam } = K;
   const { sin, cos, round } = Math;
 
   const BULBS = [['#ffd27f', [255, 210, 127]], ['#ff9d8a', [255, 157, 138]], ['#9fd3ff', [159, 211, 255]], ['#c6f2a4', [198, 242, 164]]];
@@ -10,26 +10,22 @@
     morning: {
       wall: ['#aea4c4', '#9186ab'], frame: '#e4dcea', curtain: '#d4919a', fold: '#bf7d88', rod: '#8a7060',
       sill: '#e8e0ee', sillHi: '#f8f4fb', deskTop: '#b07d53', deskEdge: '#8c5f3b', desk: ['#7f5438', '#65422d'],
-      cat: '#463d55', far: '#a9b8d2', near: '#7a87a6', win: 'rgba(230,240,255,0.45)',
-      sun: [0.2, 0.3, 12], beam: [255, 236, 200, 0.14], beamX: -40, bird: '#4a4a5a',
+      cat: '#463d55', beam: [255, 236, 200, 0.14], beamX: -40,
     },
     afternoon: {
       wall: ['#b7a9c9', '#9a8cb0'], frame: '#ece6f2', curtain: '#d98f8f', fold: '#c77b7e', rod: '#8a7060',
       sill: '#efe8f2', sillHi: '#ffffff', deskTop: '#b98356', deskEdge: '#94633d', desk: ['#8a5a3a', '#6e4630'],
-      cat: '#4a4058', far: '#b3c6de', near: '#8190ad', win: 'rgba(235,245,255,0.5)',
-      sun: null, beam: [255, 250, 235, 0.12], beamX: 0, bird: '#3a3a4a',
+      cat: '#4a4058', beam: [255, 250, 235, 0.12], beamX: 0,
     },
     evening: {
       wall: ['#7a5f86', '#5a4466'], frame: '#b8a0b8', curtain: '#b86a78', fold: '#a05a6a', rod: '#6b5a4a',
       sill: '#b89fb8', sillHi: '#cfb6cc', deskTop: '#9a6440', deskEdge: '#744a30', desk: ['#5c3c2a', '#40291d'],
-      cat: '#35294a', far: '#8f6f8f', near: '#4d3b5e', win: 'rgba(255,200,150,0.3)',
-      sun: [0.8, 0.36, 14], beam: [255, 170, 110, 0.16], beamX: 50, bird: '#3a2a3a',
+      cat: '#35294a', beam: [255, 170, 110, 0.16], beamX: 50,
     },
     night: {
       wall: ['#231f3d', '#17142b'], frame: '#3d365f', curtain: '#473768', fold: '#3a2d57', rod: '#6b5a4a',
       sill: '#4b4272', sillHi: '#5d538a', deskTop: '#7a5238', deskEdge: '#5a3a28', desk: ['#3d281d', '#2a1b14'],
-      cat: '#2a2540', far: '#29245a', near: '#15122f', win: null,
-      sun: null, beam: null, beamX: 0, bird: null,
+      cat: '#2a2540', beam: null, beamX: 0,
     },
   };
 
@@ -45,47 +41,19 @@
   }
 
   window.Lofi.scenes.register({
-    id: 'study', name: 'Study desk', outdoor: false,
+    id: 'study', name: 'Study desk', group: 'home', outdoor: false,
     mix: { rain: 0.45, thunder: 0.18 },
     create(W, H) {
-      const r = rng(11), cx = round(W / 2), dy = 198, layer = makeLayer(), birds = makeFlock();
+      const cx = round(W / 2), dy = 198, layer = makeLayer();
       const win = { x: cx - 150, y: 36, w: 300, h: 138 };
       const base = win.y + win.h;
-      const starList = makeStars(r, 45, win.x, win.w, win.y, win.h * 0.55);
-      const skyline = (minH, maxH, minW, maxW, density) => {
-        const out = [];
-        let x = win.x - 4;
-        while (x < win.x + win.w) {
-          const w = (minW + r() * (maxW - minW)) | 0, h = (minH + r() * (maxH - minH)) | 0, wins = [];
-          for (let yy = 6; yy < h - 4; yy += 6) for (let xx = 3; xx < w - 3; xx += 5) if (r() < density) wins.push({ x: xx, y: yy, p: r() * TAU, s: 0.04 + r() * 0.2 });
-          out.push({ x, w, h, wins, ant: r() < 0.2 });
-          x += w + ((r() * 3) | 0);
-        }
-        return out;
-      };
-      const far = skyline(40, 95, 12, 24, 0.25), near = skyline(18, 62, 16, 34, 0.4);
+      const view = K.viewer(win, { seed: 11, perch: 0.88, rain: 0.55 });
       const bulbs = [];
       const l0 = win.x - 40, l1 = win.x + win.w + 40;
       for (let x = l0; x <= l1; x += 11) {
         const f = (((x - l0) / (l1 - l0)) * 3) % 1;
         const [col, rgb] = BULBS[bulbs.length % 4];
         bulbs.push({ x, y: 16 + sin(f * PI) * 9, col, rgb });
-      }
-
-      function drawSkyline(c, list, col, lit, day, lights, t) {
-        for (const b of list) {
-          rect(c, b.x, base - b.h, b.w, b.h, col);
-          if (b.ant) {
-            rect(c, b.x + b.w / 2, base - b.h - 7, 1, 7, col);
-            if (lights > 0.5 && sin(t * 2 + b.x) > 0.6) rect(c, b.x + b.w / 2, base - b.h - 8, 1, 1, '#ff5a5a');
-          }
-          if (day) { c.fillStyle = day; for (const w of b.wins) c.fillRect(b.x + w.x, base - b.h + w.y, 2, 2); }
-          if (lights > 0) {
-            c.globalAlpha = lights; c.fillStyle = lit;
-            for (const w of b.wins) if (sin(t * w.s + w.p) > -0.2 + (1 - lights) * 0.8) c.fillRect(b.x + w.x, base - b.h + w.y, 2, 2);
-            c.globalAlpha = 1;
-          }
-        }
       }
 
       return {
@@ -95,17 +63,7 @@
           // view through the window
           c.save();
           c.beginPath(); c.rect(win.x, win.y, win.w, win.h); c.clip();
-          sky(c, win.x, win.y, win.w, win.h, P.sky);
-          stars(c, starList, t, P.stars);
-          if (P.moon) moon(c, win.x + win.w - 58, win.y + 30, 10);
-          else if (R.sun) sunOrMoon(c, P, win.x + win.w * R.sun[0], win.y + win.h * R.sun[1], R.sun[2]);
-          if (R.bird) flock(c, birds, t, dt, env.fx.birds, win.x, win.x + win.w, win.y + 8, win.y + 45, R.bird);
-          if (env.flash) { c.fillStyle = `rgba(200,210,255,${env.flash * 0.55})`; c.fillRect(win.x, win.y, win.w, win.h); }
-          drawSkyline(c, far, R.far, 'rgba(255,214,140,0.45)', R.win, lights, t);
-          drawSkyline(c, near, R.near, '#ffd27f', R.win, lights, t);
-          if (env.fx.birds) { if (P.moon) owl(c, win.x + win.w - 36, base, t); else perchBird(c, win.x + win.w - 36, base, t, 1, '#7a6a5a', true); }
-          env.drawWind(c, win);
-          env.drawRain(c, win, 0.55);
+          view.draw(c, t, dt, env);
           c.restore();
 
           // wall (around the window)

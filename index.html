@@ -266,25 +266,28 @@
         <label class="pill small ghost file-btn">Import backup<input type="file" id="importBackup" accept="application/json,.json" hidden></label>
       </div>
       <h3>Google</h3>
-      <h4>Sync across devices</h4>
-      <label class="check"><input type="checkbox" id="setSync"> Keep my journal, habits, to-dos and focus history in sync on all my devices</label>
-      <p class="hint">Uses a file in your own Google Drive. Turn this on on each device, signed in to the same Google account. Changes made on both devices are merged, not overwritten.</p>
+      <p class="hint">Sign in with Google to keep your journal, habits, to-do lists and focus history the same on every device you sign in on. They’re kept in a “Lofi Focus” folder in your own Google Drive, and changes from different devices are merged, not overwritten.</p>
       <div class="btn-row">
+        <button type="button" class="pill small google-signin" id="googleSignIn">Sign in with Google</button>
         <button type="button" class="pill small ghost" id="syncNow">Sync now</button>
         <span class="hint sync-status"></span>
       </div>
-      <h4>Google Drive backup</h4>
-      <div class="btn-row">
-        <button type="button" class="pill small" id="driveSave">Save to Drive</button>
-        <button type="button" class="pill small ghost" id="driveRestore">Restore from Drive</button>
-      </div>
-      <p class="hint drive-status"></p>
-      <label class="check"><input type="checkbox" id="setDriveAuto"> Keep the Drive copy up to date automatically while signed in</label>
+      <label class="check"><input type="checkbox" id="setSync"> Sync across devices</label>
       <h4>Google Calendar</h4>
       <label class="check"><input type="checkbox" id="setGcalShow"> Show my Google Calendar events in the Calendar</label>
       <label class="check"><input type="checkbox" id="setGcalLog"> Add finished focus sessions to Google Calendar</label>
       <div class="btn-row">
-        <button type="button" class="pill small" id="gcalConnect">Connect Google Calendar</button>
+        <button type="button" class="pill small google-signin" id="gcalConnect">Connect Google Calendar</button>
+      </div>
+      <h4>Google Drive backup</h4>
+      <p class="hint">A copy of everything, including stations, sounds and settings, that you can restore on any device.</p>
+      <div class="btn-row">
+        <button type="button" class="pill small ghost" id="driveSave">Save to Drive</button>
+        <button type="button" class="pill small ghost" id="driveRestore">Restore from Drive</button>
+      </div>
+      <p class="hint drive-status"></p>
+      <label class="check"><input type="checkbox" id="setDriveAuto"> Keep the Drive copy up to date automatically while signed in</label>
+      <div class="btn-row">
         <button type="button" class="pill small ghost" id="googleSignOut">Sign out of Google</button>
       </div>
       <details class="drive-setup">
@@ -334,9 +337,15 @@
   <script src="js/music.js"></script>
   <script src="js/weather.js"></script>
   <script src="js/scenes/kit.js"></script>
+  <script src="js/scenes/views.js"></script>
+  <!-- scene order in the menu (and for the N key): Home, Town, Exploration -->
   <script src="js/scenes/study.js"></script>
-  <script src="js/scenes/cafe.js"></script>
+  <script src="js/scenes/kitchen.js"></script>
   <script src="js/scenes/fireplace.js"></script>
+  <script src="js/scenes/porch.js"></script>
+  <script src="js/scenes/cafe.js"></script>
+  <script src="js/scenes/bookstore.js"></script>
+  <script src="js/scenes/greenhouse.js"></script>
   <script src="js/scenes/park.js"></script>
   <script src="js/scenes/campfire.js"></script>
   <script src="js/scenes/dock.js"></script>

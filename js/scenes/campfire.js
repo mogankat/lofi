@@ -22,9 +22,9 @@
   function guitarist(c, x, seat, t, o) {
     const skin = o.skin, sweater = o.sweater, sleeve = shade(sweater, -0.15), hair = o.hair, ph = o.ph || 0;
     const bob = sin(t * TAU * 0.6 + ph) * 0.8;
-    rect(c, x - 12, seat - 3, 10, 7, '#3a3a55'); rect(c, x + 2, seat - 3, 10, 7, '#3a3a55');
-    rect(c, x - 11, seat + 4, 8, 13, '#2f2f48'); rect(c, x + 3, seat + 4, 8, 13, '#2f2f48');
-    rect(c, x - 12, seat + 16, 10, 3, '#241c1c'); rect(c, x + 2, seat + 16, 10, 3, '#241c1c');
+    rect(c, x - 12, seat - 3, 11, 8, '#3a3a55'); rect(c, x + 1, seat - 3, 11, 8, '#3a3a55'); // knees
+    rect(c, x - 11, seat + 5, 9, 19, '#2f2f48'); rect(c, x + 2, seat + 5, 9, 19, '#2f2f48'); // shins down to the ground in front of the log
+    rrect(c, x - 13, seat + 23, 12, 4, 2, '#241c1c'); rrect(c, x + 1, seat + 23, 12, 4, 2, '#241c1c');
     rrect(c, x - 13, seat - 38 + bob * 0.3, 26, 38, 8, sweater);
     const hx = x, hy = seat - 48 + bob;
     rect(c, x - 3, hy + 8, 6, 5, shade(skin, -0.1));
@@ -61,7 +61,7 @@
   }
 
   window.Lofi.scenes.register({
-    id: 'campfire', name: 'Campfire guitar', outdoor: true,
+    id: 'campfire', name: 'Campfire guitar', group: 'explore', outdoor: true,
     mix: { fire: 0.6, crickets: 0.3, wind: 0.12 },
     create(W, H) {
       const r = rng(31), cx = round(W / 2), fx = cx - 10, fy = 230, gx = cx + 62, layer = makeLayer(), birds = makeFlock();
